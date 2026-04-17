@@ -136,7 +136,36 @@ function buildIndictmentMessage({ messageTemplate, link, authorName, boNumber })
     : `${renderedMessage}\n\nAcesse: ${link}`;
 }
 
-async function dispatchWhatsappTextMessage({ phone, message, context }) {
+async function dispatchWhatsappMessage({ phone, message, context, templateName, variables }) {
+  if (templateName) {
+    try {
+      return await whatsappClient.sendTemplateMessage({
+        to: phone,
+        phone,
+        channel: 'whatsapp',
+        template: templateName,
+        variables: variables || {},
+        message
+      });
+    } catch (error) {
+      if (env.auth.devMode && (isWhatsappConfigError(error) || isWhatsappUnavailableError(error))) {
+        return {
+          mocked: true,
+          channel: 'whatsapp',
+          context,
+          to: phone,
+          template: templateName,
+          variables: variables || {},
+          message
+        };
+      }
+
+      if (env.whatsapp.provider === 'meta-cloud') {
+        throw error;
+      }
+    }
+  }
+
   try {
     return await whatsappClient.sendTemplateMessage({
       to: phone,
@@ -263,10 +292,17 @@ async function sendIndictmentMessage(payload) {
     boNumber: payload && payload.boNumber
   });
 
-  const providerResponse = await dispatchWhatsappTextMessage({
+  const providerResponse = await dispatchWhatsappMessage({
     phone,
     message,
-    context: 'indiciamento'
+    context: 'indiciamento',
+    templateName: resolveTemplateName('AUTOR'),
+    variables: {
+      nome: String(payload && payload.authorName || '').trim(),
+      tipo: 'AUTOR',
+      texto: message,
+      link
+    }
   });
 
   return {
