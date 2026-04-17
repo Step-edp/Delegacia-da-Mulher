@@ -551,13 +551,18 @@
 
     const params = new URLSearchParams(window.location.search);
     const currentPath = window.location.pathname;
+    const requestedMode = normalizeText(params.get('tipo')).toLowerCase();
+    const isGenericMode = requestedMode === 'generico';
     const hasBoNumber = Boolean(normalizeText(params.get('bo')));
     const hasSummonsToken = Boolean(normalizeText(params.get('token')));
-    const isVictimMode = currentPath === '/atendimento-vitima'
+    const isVictimMode = !isGenericMode && (
+      currentPath === '/atendimento'
+      || currentPath === '/atendimento-vitima'
       || currentPath === '/intimacao'
-      || normalizeText(params.get('tipo')).toLowerCase() === 'vitima'
+      || requestedMode === 'vitima'
       || hasSummonsToken
-      || (currentPath === '/atendimento' && hasBoNumber);
+      || hasBoNumber
+    );
 
     const genericModePanel = document.getElementById('genericModePanel');
     const victimModePanel = document.getElementById('victimModePanel');
