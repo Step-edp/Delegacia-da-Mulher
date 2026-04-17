@@ -117,18 +117,59 @@ function buildMetaCloudPayload(payload) {
   };
 }
 
+function extractProviderErrorMessage(error) {
+  const responseData = error && error.response ? error.response.data : null;
+
+  if (responseData && typeof responseData === 'object') {
+    if (responseData.error && responseData.error.message) {
+      return String(responseData.error.message).trim();
+    }
+
+    if (responseData.message) {
+      return String(responseData.message).trim();
+    }
+
+    if (responseData.detail) {
+      return String(responseData.detail).trim();
+    }
+  }
+
+  return String(error && error.message ? error.message : '').trim();
+}
+
+function buildWhatsappClientError(error) {
+  const providerStatus = Number(error && error.response && error.response.status);
+  const providerMessage = extractProviderErrorMessage(error);
+  const wrappedError = new Error(
+    providerMessage
+      ? `Falha ao enviar mensagem no WhatsApp: ${providerMessage}`
+      : 'Falha ao enviar mensagem no WhatsApp.'
+  );
+
+  wrappedError.statusCode = providerStatus >= 400 && providerStatus < 500 ? 422 : 502;
+  wrappedError.providerStatus = Number.isInteger(providerStatus) ? providerStatus : null;
+  wrappedError.code = error && error.code ? error.code : null;
+  wrappedError.cause = error;
+
+  return wrappedError;
+}
+
 async function sendTemplateMessage(payload) {
   const apiUrl = resolveApiUrl();
   const body = env.whatsapp.provider === 'meta-cloud'
     ? buildMetaCloudPayload(payload)
     : payload;
 
-  const response = await axios.post(apiUrl, body, {
-    timeout: 15000,
-    headers: buildHeaders()
-  });
+  try {
+    const response = await axios.post(apiUrl, body, {
+      timeout: 15000,
+      headers: buildHeaders()
+    });
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    throw buildWhatsappClientError(error);
+  }
 }
 
 module.exports = {
