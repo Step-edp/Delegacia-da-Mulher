@@ -4,7 +4,7 @@ async function main() {
   const cpf = '40280221851';
   const fullName = 'Stephanie de Paula Santos Amorim';
   const phone = '12996839184';
-  const email = 'stephanie.admin@delegacia.local';
+  const email = 'stephanieps.amorim@gmail.com';
 
   const personSql = `
     INSERT INTO persons (full_name, cpf, phone)

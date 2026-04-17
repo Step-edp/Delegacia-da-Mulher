@@ -41,11 +41,28 @@ function writeDashboardSummaryCache(summary) {
 function buildSummaryCards(summary) {
   return [
     { label: 'Casos Hoje', value: summary.casesOfDayTotal },
+    { label: 'Usuarios', value: summary.activeUsers, action: 'goToUsersPage' },
     { label: 'Cadastros pendentes', value: summary.pendingRegistrations, action: 'goToRegistrationRequestsPage' },
     { label: 'Pend. Casos', value: summary.expectedCasesPending, action: 'goToPendingPage' },
     { label: 'Pend. Intimacoes', value: summary.summonsPending },
     { label: 'Pend. Notificacoes', value: summary.notificationsPending }
   ];
+}
+
+function runSummaryCardAction(action) {
+  if (action === 'goToUsersPage') {
+    window.location.href = '/admin/usuarios';
+    return;
+  }
+
+  if (action === 'goToRegistrationRequestsPage') {
+    window.location.href = '/admin/cadastros';
+    return;
+  }
+
+  if (action === 'goToPendingPage') {
+    window.location.href = '/admin/pendencias';
+  }
 }
 
 function renderSummaryCards(cardsData) {
@@ -63,15 +80,7 @@ function renderSummaryCards(cardsData) {
       return;
     }
 
-    const action = card.dataset.action;
-    if (action === 'goToRegistrationRequestsPage') {
-      window.location.href = '/admin/cadastros';
-      return;
-    }
-
-    if (action === 'goToPendingPage') {
-      window.location.href = '/admin/pendencias';
-    }
+    runSummaryCardAction(card.dataset.action);
   };
 
   cards.onkeydown = (event) => {
@@ -85,15 +94,7 @@ function renderSummaryCards(cardsData) {
     }
 
     event.preventDefault();
-    const action = card.dataset.action;
-    if (action === 'goToRegistrationRequestsPage') {
-      window.location.href = '/admin/cadastros';
-      return;
-    }
-
-    if (action === 'goToPendingPage') {
-      window.location.href = '/admin/pendencias';
-    }
+    runSummaryCardAction(card.dataset.action);
   };
 }
 
@@ -622,7 +623,7 @@ async function loadDashboard() {
 
   const data = await response.json();
 
-  if (data && data.mocked && data.pending) {
+  if (data && data.mocked && data.pending && !Number.isFinite(Number(data.pending.expectedCasesPending))) {
     data.pending.expectedCasesPending = readDevPendingCases();
   }
 
@@ -635,12 +636,18 @@ async function loadDashboard() {
   }
 
   data.pending.pendingRegistrations = safeCount(data.pending.pendingRegistrations);
+  data.pending.activeUsers = safeCount(data.pending.activeUsers);
   data.pending.expectedCasesPending = safeCount(data.pending.expectedCasesPending);
   data.pending.summonsPending = safeCount(data.pending.summonsPending);
   data.pending.notificationsPending = safeCount(data.pending.notificationsPending);
 
+  if (data && data.mocked) {
+    writeDevPendingCases(data.pending.expectedCasesPending);
+  }
+
   const summarySnapshot = {
     casesOfDayTotal: safeCount(data.casesOfDay.total),
+    activeUsers: data.pending.activeUsers,
     pendingRegistrations: data.pending.pendingRegistrations,
     expectedCasesPending: data.pending.expectedCasesPending,
     summonsPending: data.pending.summonsPending,

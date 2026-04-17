@@ -29,32 +29,51 @@ function syncPendingRegistrationsCache(total) {
 }
 
 function renderPendingRegistrations(items) {
-  const body = document.getElementById('registrationsTableBody');
   const container = document.getElementById('registrationsList');
 
   if (!items.length) {
-    body.innerHTML = '';
-    container.innerHTML = '<p class="muted">Nenhuma solicitação de cadastro pendente no momento.</p>';
+    container.innerHTML = `
+      <article class="item registration-card empty-state-card">
+        <strong>Nenhuma solicitacao pendente</strong>
+        <div class="meta">Nenhuma solicitacao de cadastro pendente no momento.</div>
+      </article>
+    `;
     return;
   }
 
-  body.innerHTML = items
+  container.innerHTML = items
     .map((item) => `
-      <tr>
-        <td><strong>${valueOrDash(item.fullName)}</strong></td>
-        <td>${valueOrDash(item.cpf)}</td>
-        <td>${valueOrDash(item.email)}</td>
-        <td>${valueOrDash(item.phone)}</td>
-        <td><span class="role-badge">${valueOrDash(item.role)}</span></td>
-        <td>${formatDateTime(item.createdAt)}</td>
-        <td>
+      <article class="item registration-card">
+        <div class="registration-card-header">
+          <div>
+            <div class="eyebrow">Solicitacao</div>
+            <strong>${valueOrDash(item.fullName)}</strong>
+          </div>
+          <span class="role-badge">${valueOrDash(item.role)}</span>
+        </div>
+
+        <div class="registration-detail-grid">
+          <div class="detail-block">
+            <span class="detail-label">CPF</span>
+            <span>${valueOrDash(item.cpf)}</span>
+          </div>
+          <div class="detail-block">
+            <span class="detail-label">Telefone</span>
+            <span>${valueOrDash(item.phone)}</span>
+          </div>
+          <div class="detail-block detail-block-wide">
+            <span class="detail-label">E-mail</span>
+            <span>${valueOrDash(item.email)}</span>
+          </div>
+        </div>
+
+        <div class="registration-card-footer">
+          <div class="meta">Solicitado em ${formatDateTime(item.createdAt)}</div>
           <button type="button" class="approve-btn" data-user-id="${item.id}">Aprovar</button>
-        </td>
-      </tr>
+        </div>
+      </article>
     `)
     .join('');
-
-  container.innerHTML = '';
 }
 
 async function loadPendingRegistrations() {
@@ -113,7 +132,7 @@ document.getElementById('refreshBtn').addEventListener('click', () => {
   });
 });
 
-document.getElementById('registrationsTableBody').addEventListener('click', async (event) => {
+document.getElementById('registrationsList').addEventListener('click', async (event) => {
   const button = event.target.closest('.approve-btn');
   if (!button) {
     return;

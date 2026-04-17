@@ -147,7 +147,7 @@ async function requestAdminOtp(payload) {
     throw error;
   }
 
-  if (env.auth.devMode) {
+  if (env.auth.devMode && !env.auth.devSendRealOtp) {
     if (cpf !== normalizeCpf(env.auth.devAdminCpf)) {
       const error = new Error('CPF sem permissao de admin no modo de desenvolvimento.');
       error.statusCode = 403;
@@ -376,7 +376,7 @@ async function verifyAdminOtp(payload) {
     throw error;
   }
 
-  if (env.auth.devMode) {
+  if (env.auth.devMode && !env.auth.devSendRealOtp) {
     ensureSessionSecret();
 
     if (cpf !== normalizeCpf(env.auth.devAdminCpf)) {

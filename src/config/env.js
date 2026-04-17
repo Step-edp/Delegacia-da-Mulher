@@ -37,11 +37,16 @@ const env = {
     sessionSecret: process.env.JWT_SESSION_SECRET || '',
     sessionExpiresIn: process.env.JWT_SESSION_EXPIRES_IN || '12h',
     devMode: process.env.AUTH_DEV_MODE === 'true',
+    devSendRealOtp: process.env.AUTH_DEV_SEND_REAL_OTP === 'true',
     devAdminCpf: process.env.AUTH_DEV_ADMIN_CPF || '40280221851'
   },
   whatsapp: {
+    provider: process.env.WHATSAPP_PROVIDER || 'generic',
     apiUrl: process.env.WHATSAPP_API_URL || '',
     apiToken: process.env.WHATSAPP_API_TOKEN || '',
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v22.0',
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    languageCode: process.env.WHATSAPP_LANGUAGE_CODE || 'pt_BR',
     defaultTemplateName: process.env.WHATSAPP_TEMPLATE_NAME || 'intimacao_padrao',
     otpTemplateName: process.env.WHATSAPP_OTP_TEMPLATE_NAME || 'otp_login',
     victimNotificationTemplateName: process.env.WHATSAPP_VICTIM_NOTIFICATION_TEMPLATE_NAME || 'notificacao_vitima',

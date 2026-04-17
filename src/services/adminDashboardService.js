@@ -1,22 +1,31 @@
 const dashboardRepository = require('../repositories/adminDashboardRepository');
 const env = require('../config/env');
 const localAuthRepository = require('../repositories/localAuthRepository');
+const localExpectedCaseRepository = require('../repositories/localExpectedCaseRepository');
 
 async function buildDevDashboardOverview() {
-  let pendingRegistrations = 0;
+  const [pendingRegistrationsResult, pendingExpectedCasesResult, activeUsersResult] = await Promise.allSettled([
+    localAuthRepository.countPendingRegistrations(),
+    localExpectedCaseRepository.countPendingExpectedCases(),
+    localAuthRepository.countActiveUsers()
+  ]);
 
-  try {
-    pendingRegistrations = await localAuthRepository.countPendingRegistrations();
-  } catch (error) {
-    pendingRegistrations = 0;
-  }
+  const pendingRegistrations = pendingRegistrationsResult.status === 'fulfilled'
+    ? pendingRegistrationsResult.value
+    : 0;
+  const expectedCasesPending = pendingExpectedCasesResult.status === 'fulfilled'
+    ? pendingExpectedCasesResult.value
+    : 0;
+  const activeUsers = activeUsersResult.status === 'fulfilled'
+    ? activeUsersResult.value
+    : 0;
 
   return {
     generatedAt: new Date().toISOString(),
     mocked: true,
     casesOfDay: { total: 1, items: [{ protocolNumber: 'DEV-001', title: 'Caso de teste', status: 'open', priority: 'medium', openedAt: new Date().toISOString() }] },
-    pending: { expectedCasesPending: 2, summonsPending: 1, notificationsPending: 1, pendingRegistrations },
-    agendaOfDay: { total: 1, items: [{ personName: 'Usuario Teste', appointmentType: 'ATENDIMENTO', personRole: 'VITIMA', startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 30 * 60000).toISOString(), status: 'AGENDADO' }] },
+    pending: { expectedCasesPending, summonsPending: 1, notificationsPending: 1, pendingRegistrations, activeUsers },
+    agendaOfDay: { total: 1, items: [{ personName: 'Super Admin', appointmentType: 'ATENDIMENTO', personRole: 'VITIMA', startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 30 * 60000).toISOString(), status: 'AGENDADO' }] },
     recurrence: { total: 1, items: [{ personName: 'Autor Exemplo', cpf: '00000000000', caseCount: 2 }] }
   };
 }
@@ -83,10 +92,29 @@ async function getPendingCasesList() {
       throw error;
     }
 
+    const result = await localExpectedCaseRepository.listPendingExpectedCases();
+
     return {
       mocked: true,
-      total: 0,
-      items: []
+      total: result.total,
+      items: result.items
+    };
+  }
+}
+
+async function getUsersList() {
+  try {
+    return await dashboardRepository.getActiveUsers();
+  } catch (error) {
+    if (!env.auth.devMode) {
+      throw error;
+    }
+
+    const result = await localAuthRepository.listActiveUsers();
+    return {
+      mocked: true,
+      total: result.total,
+      items: result.items
     };
   }
 }
@@ -95,5 +123,6 @@ module.exports = {
   getDashboardOverview,
   getPendingCasesList,
   getPendingRegistrationRequests,
-  approveRegistrationRequest
+  approveRegistrationRequest,
+  getUsersList
 };

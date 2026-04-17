@@ -27,6 +27,15 @@ async function getPendingRegistrationRequests(req, res, next) {
   }
 }
 
+async function getUsers(req, res, next) {
+  try {
+    const result = await adminDashboardService.getUsersList();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function approveRegistrationRequest(req, res, next) {
   try {
     const userId = Number(req.params.userId);
@@ -53,5 +62,6 @@ module.exports = {
   getOverview,
   getPendingCases,
   getPendingRegistrationRequests,
-  approveRegistrationRequest
+  approveRegistrationRequest,
+  getUsers
 };

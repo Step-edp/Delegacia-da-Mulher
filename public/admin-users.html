@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastros Pendentes - Delegacia da Mulher</title>
+  <title>Usuarios - Delegacia da Mulher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles/admin-pending.css" />
-  <link rel="stylesheet" href="/styles/admin-registrations.css" />
+  <link rel="stylesheet" href="/styles/admin-users.css" />
 </head>
 <body>
   <div class="bg-shape bg-shape-1"></div>
@@ -18,14 +18,14 @@
     <header class="hero">
       <div>
         <p class="tag">Delegacia da Mulher</p>
-        <h1>Cadastros Pendentes</h1>
-        <p class="subtitle">Lista de solicitações de cadastro aguardando aprovação administrativa.</p>
+        <h1>Usuarios</h1>
+        <p class="subtitle">Usuarios ja aprovados e liberados para acesso no painel administrativo.</p>
       </div>
       <div class="hero-actions">
         <a href="/admin/painel" class="icon-btn icon-btn-secondary" aria-label="Voltar ao painel" title="Voltar ao painel">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M12 19l-7-7 7-7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
         </a>
-        <button id="refreshBtn" class="icon-btn icon-btn-primary" type="button" aria-label="Atualizar cadastros pendentes" title="Atualizar cadastros pendentes">
+        <button id="refreshBtn" class="icon-btn icon-btn-primary" type="button" aria-label="Atualizar usuarios" title="Atualizar usuarios">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M20 4v6h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
         </button>
         <button id="logoutBtn" class="icon-btn icon-btn-danger" type="button" aria-label="Sair" title="Sair">
@@ -37,15 +37,15 @@
     <section class="panel">
       <div class="summary-row">
         <div>
-          <strong>Total pendente:</strong>
-          <span id="pendingCount">0</span>
+          <strong>Total de usuarios:</strong>
+          <span id="usersCount">0</span>
         </div>
       </div>
-      <div id="registrationsList" class="list registrations-grid"></div>
+      <div id="usersList" class="list users-grid"></div>
     </section>
   </main>
 
-  <script src="/scripts/admin-registrations.js"></script>
+  <script src="/scripts/admin-users.js"></script>
   <script src="/scripts/admin-shell.js"></script>
 </body>
 </html>

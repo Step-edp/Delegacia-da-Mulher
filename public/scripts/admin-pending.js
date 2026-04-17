@@ -118,9 +118,10 @@ async function loadPendingCases() {
 
   const data = await response.json();
   let items = Array.isArray(data && data.items) ? data.items : [];
-  let total = Number(data && data.total ? data.total : items.length);
+  const responseTotal = Number(data && data.total);
+  let total = Number.isFinite(responseTotal) ? responseTotal : items.length;
 
-  if (data && data.mocked) {
+  if (data && data.mocked && !items.length && !Number.isFinite(responseTotal)) {
     const devBos = readDevPendingBos();
     items = devBos;
     total = readDevPendingCases() || items.length;

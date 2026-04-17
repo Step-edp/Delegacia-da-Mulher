@@ -37,6 +37,10 @@ app.get('/admin/cadastros', (req, res) => {
   res.sendFile(path.resolve(process.cwd(), 'public', 'admin-registrations.html'));
 });
 
+app.get('/admin/usuarios', (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'public', 'admin-users.html'));
+});
+
 app.get('/admin/painel', (req, res) => {
   res.sendFile(path.resolve(process.cwd(), 'public', 'admin-dashboard.html'));
 });

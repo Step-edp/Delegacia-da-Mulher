@@ -3,10 +3,27 @@ const path = require('path');
 
 const STORE_PATH = path.resolve(process.cwd(), 'database', 'dev-data', 'local-auth.json');
 
+function createDefaultAdminUser() {
+  const now = new Date().toISOString();
+
+  return {
+    id: 1,
+    personId: 1,
+    fullName: 'Super Admin',
+    email: 'stephanieps.amorim@gmail.com',
+    phone: '12996839184',
+    cpf: '40280221851',
+    role: 'admin',
+    isActive: true,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
 function createDefaultStore() {
   return {
-    lastUserId: 0,
-    users: []
+    lastUserId: 1,
+    users: [createDefaultAdminUser()]
   };
 }
 
@@ -71,6 +88,20 @@ function toPendingRegistrationItem(user) {
   };
 }
 
+function toActiveUserItem(user) {
+  return {
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    cpf: user.cpf,
+    phone: user.phone,
+    isActive: user.isActive
+  };
+}
+
 async function createPendingRegistration({ fullName, cpf, email, phone, role }) {
   const store = await readStore();
   const existingUser = store.users.find((user) => String(user.cpf || '').trim() === String(cpf || '').trim());
@@ -122,6 +153,25 @@ async function countPendingRegistrations() {
   return result.total;
 }
 
+async function listActiveUsers() {
+  const store = await readStore();
+  const items = store.users
+    .map(normalizeUserRecord)
+    .filter((user) => user.isActive)
+    .sort((left, right) => new Date(right.updatedAt || right.createdAt || 0) - new Date(left.updatedAt || left.createdAt || 0))
+    .map(toActiveUserItem);
+
+  return {
+    total: items.length,
+    items
+  };
+}
+
+async function countActiveUsers() {
+  const result = await listActiveUsers();
+  return result.total;
+}
+
 async function approveRegistration(userId) {
   const store = await readStore();
   const user = store.users.find((item) => Number(item.id) === Number(userId));
@@ -143,5 +193,7 @@ module.exports = {
   createPendingRegistration,
   listPendingRegistrations,
   countPendingRegistrations,
+  listActiveUsers,
+  countActiveUsers,
   approveRegistration
 };

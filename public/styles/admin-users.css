@@ -1,0 +1,65 @@
+.users-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.user-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, #fff8fc 0%, #ffffff 100%);
+  box-shadow: 0 12px 30px rgba(123, 15, 69, 0.08);
+}
+
+.user-card-header,
+.user-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.role-badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.role-badge {
+  background: #ffeef8;
+  color: var(--pink-900);
+}
+
+.status-badge {
+  background: #eefbf4;
+  color: #1f7a4b;
+  border-color: #c9ebd9;
+}
+
+@media (max-width: 760px) {
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card-header,
+  .user-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

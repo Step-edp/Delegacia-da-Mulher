@@ -1,10 +1,28 @@
-.registrations-table {
-  min-width: 1080px;
+.registrations-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
-.registrations-table td:last-child,
-.registrations-table th:last-child {
-  width: 120px;
+.registration-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, #fff8fc 0%, #ffffff 100%);
+  box-shadow: 0 12px 30px rgba(123, 15, 69, 0.08);
+}
+
+.registration-card-header,
+.registration-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.registration-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .approve-btn {
@@ -32,11 +50,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: #ffeef8;
   border: 1px solid var(--line);
   color: var(--pink-900);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .registrations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-card-header,
+  .registration-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .registration-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -4,6 +4,7 @@ const { extractPeriodFromText } = require('../utils/periodExtractor');
 const { parseBoBookContent, parseBoBookEntries } = require('../utils/boBookParser');
 const dailyImportRepository = require('../repositories/dailyImportRepository');
 const expectedCaseRepository = require('../repositories/expectedCaseRepository');
+const localExpectedCaseRepository = require('../repositories/localExpectedCaseRepository');
 const env = require('../config/env');
 
 function isDbUnavailableError(error) {
@@ -45,6 +46,29 @@ function validatePeriodContinuity(period, lastImport) {
     );
     error.statusCode = 409;
     throw error;
+  }
+}
+
+async function buildLocalExpectedCasesFallback({ file, period, boEntries }) {
+  try {
+    return await localExpectedCaseRepository.createPendingExpectedCases({
+      sourceName: file.originalname,
+      periodStart: period.start.toISOString(),
+      periodEnd: period.end.toISOString(),
+      boEntries
+    });
+  } catch (error) {
+    return boEntries.map((entry, index) => ({
+      id: index + 1,
+      status: 'PENDENTE',
+      boNumber: entry.boNumber || null,
+      flagrante: entry.flagrante || null,
+      natureza: entry.natureza || null,
+      victimName: entry.victim || null,
+      authorName: entry.author || null,
+      local: entry.local || null,
+      mocked: true
+    }));
   }
 }
 
@@ -97,14 +121,7 @@ async function processPdfUpload(file) {
         createdAt: new Date().toISOString(),
         mocked: true
       };
-      expectedCases = [
-        ...boEntries.map((entry, index) => ({
-          id: index + 1,
-          status: 'PENDENTE',
-          boNumber: entry.boNumber || null,
-          mocked: true
-        }))
-      ];
+      expectedCases = await buildLocalExpectedCasesFallback({ file, period, boEntries });
     } else if (isDbUnavailableError(error)) {
       const unavailableError = new Error('Banco de dados indisponivel no momento. Tente novamente em instantes.');
       unavailableError.statusCode = 503;
