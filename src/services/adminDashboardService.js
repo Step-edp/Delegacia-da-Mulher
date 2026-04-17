@@ -487,6 +487,81 @@ function shouldUseLocalSimulation() {
   return env.auth.devMode;
 }
 
+function normalizeCount(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function buildEmptyCasesOfDay() {
+  return {
+    total: 0,
+    items: []
+  };
+}
+
+function buildEmptyInvolvedPeopleOverview() {
+  return {
+    total: 0,
+    recurrentTotal: 0,
+    items: []
+  };
+}
+
+function buildEmptyPendingSummary() {
+  return {
+    expectedCasesPending: 0,
+    summonsPending: 0,
+    notificationsPending: 0,
+    pendingRegistrations: 0,
+    activeUsers: 0
+  };
+}
+
+function normalizePendingSummary(summary) {
+  return {
+    expectedCasesPending: normalizeCount(summary && summary.expectedCasesPending),
+    summonsPending: normalizeCount(summary && summary.summonsPending),
+    notificationsPending: normalizeCount(summary && summary.notificationsPending),
+    pendingRegistrations: normalizeCount(summary && summary.pendingRegistrations),
+    activeUsers: normalizeCount(summary && summary.activeUsers)
+  };
+}
+
+function buildEmptyAgendaOfDay() {
+  return {
+    total: 0,
+    items: []
+  };
+}
+
+function buildEmptyRecurrenceSummary() {
+  return {
+    total: 0,
+    items: []
+  };
+}
+
+function logDashboardOverviewSectionFailure(sectionName, error) {
+  const message = error && error.message ? error.message : 'Erro desconhecido.';
+  console.warn(`[adminDashboardService] dashboard overview fallback for ${sectionName}: ${message}`);
+}
+
+function buildOverviewSectionResult(result, { sectionName, fallbackValue, transform }) {
+  if (result.status === 'fulfilled') {
+    return {
+      value: typeof transform === 'function' ? transform(result.value) : result.value,
+      warning: null
+    };
+  }
+
+  logDashboardOverviewSectionFailure(sectionName, result.reason);
+
+  return {
+    value: fallbackValue,
+    warning: sectionName
+  };
+}
+
 async function buildDevDashboardOverview() {
   const [pendingRegistrationsResult, pendingExpectedCasesResult, activeUsersResult] = await Promise.allSettled([
     localAuthRepository.countPendingRegistrations(),
@@ -521,30 +596,73 @@ async function getDashboardOverview() {
     return buildDevDashboardOverview();
   }
 
-  try {
-    const involvedPeople = await getInvolvedPeopleList();
-    const [casesOfDay, pending, agendaOfDay, recurrence] = await Promise.all([
-      dashboardRepository.getCasesOfDay(),
-      dashboardRepository.getPendingSummary(),
-      dashboardRepository.getAgendaOfDay(),
-      dashboardRepository.getRecurrenceSummary()
-    ]);
+  const results = await Promise.allSettled([
+    getInvolvedPeopleList(),
+    dashboardRepository.getCasesOfDay(),
+    dashboardRepository.getPendingSummary(),
+    dashboardRepository.getAgendaOfDay(),
+    dashboardRepository.getRecurrenceSummary()
+  ]);
 
-    return {
-      generatedAt: new Date().toISOString(),
-      casesOfDay,
-      involvedPeople: { total: involvedPeople.total },
-      pending,
-      agendaOfDay,
-      recurrence
-    };
-  } catch (error) {
-    if (!env.auth.devMode) {
-      throw error;
-    }
-
-    return buildDevDashboardOverview();
+  const rejectedResults = results.filter((result) => result.status === 'rejected');
+  if (rejectedResults.length === results.length) {
+    throw rejectedResults[0].reason;
   }
+
+  const [
+    involvedPeopleResult,
+    casesOfDayResult,
+    pendingResult,
+    agendaOfDayResult,
+    recurrenceResult
+  ] = results;
+
+  const involvedPeople = buildOverviewSectionResult(involvedPeopleResult, {
+    sectionName: 'involvedPeople',
+    fallbackValue: buildEmptyInvolvedPeopleOverview(),
+    transform: (value) => ({
+      total: normalizeCount(value && value.total)
+    })
+  });
+
+  const casesOfDay = buildOverviewSectionResult(casesOfDayResult, {
+    sectionName: 'casesOfDay',
+    fallbackValue: buildEmptyCasesOfDay()
+  });
+
+  const pending = buildOverviewSectionResult(pendingResult, {
+    sectionName: 'pending',
+    fallbackValue: buildEmptyPendingSummary(),
+    transform: normalizePendingSummary
+  });
+
+  const agendaOfDay = buildOverviewSectionResult(agendaOfDayResult, {
+    sectionName: 'agendaOfDay',
+    fallbackValue: buildEmptyAgendaOfDay()
+  });
+
+  const recurrence = buildOverviewSectionResult(recurrenceResult, {
+    sectionName: 'recurrence',
+    fallbackValue: buildEmptyRecurrenceSummary()
+  });
+
+  const warnings = [
+    involvedPeople.warning,
+    casesOfDay.warning,
+    pending.warning,
+    agendaOfDay.warning,
+    recurrence.warning
+  ].filter(Boolean);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    ...(warnings.length ? { partial: true, warnings } : {}),
+    casesOfDay: casesOfDay.value,
+    involvedPeople: involvedPeople.value,
+    pending: pending.value,
+    agendaOfDay: agendaOfDay.value,
+    recurrence: recurrence.value
+  };
 }
 
 async function getPendingRegistrationRequests() {
