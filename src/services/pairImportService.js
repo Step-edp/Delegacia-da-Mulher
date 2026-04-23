@@ -177,6 +177,11 @@ async function importBoAndExtratoPair(files, payload) {
 
   const boData = parseBoBookContent(boText);
   const extratoData = parseExtratoContent(extratoText);
+  
+  console.log('[pairImportService] Parsed data:');
+  console.log('  boData.boNumber:', boData.boNumber);
+  console.log('  extratoData.boNumber:', extratoData.boNumber);
+  
   const boNumber = resolveTargetBoNumber(boData, extratoData);
 
   if (env.auth.devMode) {
