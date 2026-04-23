@@ -595,6 +595,7 @@
       email: normalizeText(params.get('email')),
       token: normalizeText(params.get('token')),
       caseId: parsePositiveInteger(params.get('caseId')),
+      summonsId: parsePositiveInteger(params.get('summonsId')),
       availabilityDates: [],
       selectedDate: '',
       selectedSlotId: null,
@@ -841,6 +842,10 @@
           + '<p class="info-copy">Codigo de confirmacao: <strong>' + normalizeText(data && data.appointment && data.appointment.attendanceCode) + '</strong>.</p>';
 
         setStatus(bookingStatus, 'Agendamento realizado com sucesso.', 'success');
+        // Registrar evento de agendamento concluído
+        if (victimState.summonsId) {
+          fetch('/api/summons-events/' + victimState.summonsId + '/scheduled', { method: 'POST' }).catch(function () {});
+        }
         await loadAvailabilityOptions();
       } catch (error) {
         setStatus(bookingStatus, error.message || 'Nao foi possivel confirmar o agendamento.', 'error');
@@ -854,6 +859,11 @@
       await loadVictimContextFromBo();
       syncVictimInputs();
       renderVictimCopy();
+
+      // Registrar clique no link de intimação
+      if (victimState.summonsId) {
+        fetch('/api/summons-events/' + victimState.summonsId + '/link-clicked', { method: 'POST' }).catch(function () {});
+      }
 
       schedulePanel.hidden = false;
       noProceedPanel.hidden = true;
@@ -871,6 +881,10 @@
         noProceedPanel.hidden = false;
         schedulePanel.hidden = true;
         setStatus(ackStatus, '', '');
+        // Registrar clique no botão de recusa
+        if (victimState.summonsId) {
+          fetch('/api/summons-events/' + victimState.summonsId + '/refusal', { method: 'POST' }).catch(function () {});
+        }
       });
 
       document.getElementById('acknowledgeBtn').addEventListener('click', function () {
@@ -885,6 +899,10 @@
 
       bookAppointmentBtn.addEventListener('click', function () {
         if (!victimState.bookingComplete) {
+          // Registrar clique no botão de agendar
+          if (victimState.summonsId) {
+            fetch('/api/summons-events/' + victimState.summonsId + '/schedule-button-clicked', { method: 'POST' }).catch(function () {});
+          }
           bookVictimAppointment();
         }
       });

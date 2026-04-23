@@ -1,0 +1,48 @@
+.certificate-search-panel {
+  gap: 14px;
+}
+
+.certificate-search-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.certificate-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.certificate-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #6b8096;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+#boNumberInput {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f8fcff 0%, #ffffff 100%);
+  color: var(--ink);
+  padding: 13px 16px 13px 36px;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 24px rgba(52, 117, 159, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+#boNumberInput::placeholder {
+  color: #8a9caf;
+  font-weight: 500;
+}
+
+#boNumberInput:focus {
+  outline: none;
+  border-color: #59a9d8;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(64, 169, 221, 0.15), 0 10px 28px rgba(52, 117, 159, 0.14);
+}

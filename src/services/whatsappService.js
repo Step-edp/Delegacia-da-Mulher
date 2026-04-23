@@ -1,5 +1,6 @@
 const whatsappClient = require('../clients/whatsappClient');
 const summonsRepository = require('../repositories/summonsRepository');
+const summonsEventsService = require('./summonsEventsService');
 const env = require('../config/env');
 
 const TEMPLATE_BY_PERSON_TYPE = {
@@ -69,7 +70,7 @@ function buildSummonsLink(token) {
   return `${baseUrl}/intimacao?token=${encodeURIComponent(token)}`;
 }
 
-function buildVictimAttendanceLink({ publicBaseUrl, boNumber, personName, phone, caseId, token }) {
+function buildVictimAttendanceLink({ publicBaseUrl, boNumber, personName, phone, caseId, token, summonsId }) {
   const linkUrl = new URL('/atendimento-vitima', `${resolvePublicBaseUrl(publicBaseUrl || env.whatsapp.publicBaseUrl)}/`);
 
   linkUrl.searchParams.set('tipo', 'vitima');
@@ -92,6 +93,10 @@ function buildVictimAttendanceLink({ publicBaseUrl, boNumber, personName, phone,
 
   if (token) {
     linkUrl.searchParams.set('token', String(token).trim());
+  }
+
+  if (summonsId) {
+    linkUrl.searchParams.set('summonsId', String(summonsId).trim());
   }
 
   return linkUrl.toString();
@@ -136,7 +141,7 @@ function buildIndictmentMessage({ messageTemplate, link, authorName, boNumber })
     : `${renderedMessage}\n\nAcesse: ${link}`;
 }
 
-async function dispatchWhatsappMessage({ phone, message, context, templateName, variables }) {
+async function dispatchWhatsappMessage({ phone, message, imageUrl, context, templateName, variables }) {
   if (templateName) {
     try {
       return await whatsappClient.sendTemplateMessage({
@@ -145,7 +150,8 @@ async function dispatchWhatsappMessage({ phone, message, context, templateName, 
         channel: 'whatsapp',
         template: templateName,
         variables: variables || {},
-        message
+        message,
+        imageUrl
       });
     } catch (error) {
       if (env.auth.devMode && (isWhatsappConfigError(error) || isWhatsappUnavailableError(error))) {
@@ -171,7 +177,8 @@ async function dispatchWhatsappMessage({ phone, message, context, templateName, 
       to: phone,
       phone,
       channel: 'whatsapp',
-      message
+      message,
+      imageUrl
     });
   } catch (error) {
     if (env.auth.devMode && (isWhatsappConfigError(error) || isWhatsappUnavailableError(error))) {
@@ -180,7 +187,8 @@ async function dispatchWhatsappMessage({ phone, message, context, templateName, 
         channel: 'whatsapp',
         context,
         to: phone,
-        message
+        message,
+        imageUrl
       };
     }
 
@@ -236,7 +244,8 @@ async function sendSummonsMessage(payload) {
         personName: summons.personName,
         phone,
         caseId: summons.caseId,
-        token: input.token
+        token: input.token,
+        summonsId: summons.id
       })
     : buildSummonsLink(input.token);
 
@@ -257,6 +266,10 @@ async function sendSummonsMessage(payload) {
   const providerResponse = await whatsappClient.sendTemplateMessage(body);
 
   await summonsRepository.markAsSent(input.summonsId, 'whatsapp');
+  await summonsEventsService.recordAttemptSent({
+    summonsId: input.summonsId,
+    attemptNumber: Number(summons.attemptNumber) || 1
+  });
 
   return {
     summonsId: summons.id,
@@ -295,6 +308,7 @@ async function sendIndictmentMessage(payload) {
   const providerResponse = await dispatchWhatsappMessage({
     phone,
     message,
+    imageUrl: payload && payload.imageUrl,
     context: 'indiciamento',
     templateName: resolveTemplateName('AUTOR'),
     variables: {

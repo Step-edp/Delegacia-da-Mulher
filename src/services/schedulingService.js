@@ -46,8 +46,13 @@ function normalizePhone(value) {
 function validateSchedulingSettingsPayload(payload, currentSettings = {}) {
   const hasGapValue = payload && payload.victimAuthorGapHours != null && String(payload.victimAuthorGapHours).trim() !== '';
   const hasAuthorSummonsMaxDays = payload && payload.authorSummonsMaxDays != null && String(payload.authorSummonsMaxDays).trim() !== '';
+  const hasSummonsMaxAttempts = payload && payload.summonsMaxAttempts != null && String(payload.summonsMaxAttempts).trim() !== '';
+  const hasSummonsIntervalHours = payload && payload.summonsIntervalHours != null && String(payload.summonsIntervalHours).trim() !== '';
+
   const victimAuthorGapHours = Number(hasGapValue ? payload.victimAuthorGapHours : currentSettings.victimAuthorGapHours);
   const authorSummonsMaxDays = Number(hasAuthorSummonsMaxDays ? payload.authorSummonsMaxDays : currentSettings.authorSummonsMaxDays);
+  const summonsMaxAttempts = Number(hasSummonsMaxAttempts ? payload.summonsMaxAttempts : (currentSettings.summonsMaxAttempts ?? 3));
+  const summonsIntervalHours = Number(hasSummonsIntervalHours ? payload.summonsIntervalHours : (currentSettings.summonsIntervalHours ?? 12));
 
   if (!Number.isInteger(victimAuthorGapHours) || victimAuthorGapHours < 0 || victimAuthorGapHours > 720) {
     const error = new Error('victimAuthorGapHours deve ser um numero inteiro entre 0 e 720.');
@@ -61,9 +66,23 @@ function validateSchedulingSettingsPayload(payload, currentSettings = {}) {
     throw error;
   }
 
+  if (!Number.isInteger(summonsMaxAttempts) || summonsMaxAttempts < 1 || summonsMaxAttempts > 10) {
+    const error = new Error('summonsMaxAttempts deve ser um numero inteiro entre 1 e 10.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Number.isInteger(summonsIntervalHours) || summonsIntervalHours < 1) {
+    const error = new Error('summonsIntervalHours deve ser um numero inteiro maior ou igual a 1.');
+    error.statusCode = 400;
+    throw error;
+  }
+
   return {
     victimAuthorGapHours,
-    authorSummonsMaxDays
+    authorSummonsMaxDays,
+    summonsMaxAttempts,
+    summonsIntervalHours
   };
 }
 

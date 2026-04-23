@@ -8,6 +8,7 @@ const summonsRoutes = require('./summonsRoutes');
 const authRoutes = require('./authRoutes');
 const schedulingRoutes = require('./schedulingRoutes');
 const adminDashboardRoutes = require('./adminDashboardRoutes');
+const summonsEventsRoutes = require('./summonsEventsRoutes');
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/summons', summonsRoutes);
 router.use('/auth', authRoutes);
 router.use('/scheduling', schedulingRoutes);
 router.use('/admin/dashboard', adminDashboardRoutes);
+router.use('/summons-events', summonsEventsRoutes);
 
 module.exports = router;

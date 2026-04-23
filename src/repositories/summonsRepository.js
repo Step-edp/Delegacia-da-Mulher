@@ -10,6 +10,7 @@ async function findByIdWithPerson(summonsId) {
       s.delivery_channel AS "deliveryChannel",
       s.person_type AS "personType",
       s.summons_text AS "summonsText",
+      s.attempt_number AS "attemptNumber",
       p.full_name AS "personName",
       p.phone AS "personPhone"
     FROM summons s
@@ -36,9 +37,10 @@ async function createSummons(payload) {
       summons_text,
       token_hash,
       token_jti,
-      token_expires_at
+      token_expires_at,
+      attempt_number
     )
-    VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11)
+    VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING
       id,
       case_id AS "caseId",
@@ -50,6 +52,7 @@ async function createSummons(payload) {
       summons_text AS "summonsText",
       token_jti AS "tokenJti",
       token_expires_at AS "tokenExpiresAt",
+      attempt_number AS "attemptNumber",
       created_at AS "createdAt"
   `;
 
@@ -64,7 +67,8 @@ async function createSummons(payload) {
     payload.summonsText,
     payload.tokenHash,
     payload.tokenJti,
-    payload.tokenExpiresAt
+    payload.tokenExpiresAt,
+    payload.attemptNumber || 1
   ];
 
   const { rows } = await pool.query(query, values);

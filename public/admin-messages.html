@@ -31,16 +31,23 @@
     <section id="composePanel" class="panel compose-panel" hidden>
       <div class="compose-header">
         <div>
-          <h2>Texto para WhatsApp</h2>
-            <p class="muted">Escreva aqui a mensagem que sera enviada ao clicar em Indiciar. Se quiser, use {{nome}}, {{bo}} e {{link}} dentro do texto.</p>
+          <p class="muted">Escreva aqui a mensagem que sera enviada ao clicar em Indiciar. Se quiser, use {{nomevitima}}, {{nomeinfrator}}, {{nometestemunha}}, {{linkvitima}}, {{linkinfrator}}, {{linktestemunha}} e {{bo}} dentro do texto.</p>
         </div>
         <button id="saveMessageBtn" class="ghost-btn" type="button">Salvar mensagem</button>
       </div>
 
       <div class="draft-grid">
         <label class="draft-field" for="messageWhatsappDraft">
-          <span class="draft-label">Texto para WhatsApp</span>
+          <span class="draft-label">Texto para WhatsApp – Vítima</span>
           <textarea id="messageWhatsappDraft" rows="10" placeholder="Digite aqui a mensagem completa para WhatsApp. O link sera inserido automaticamente se {{link}} nao estiver no texto."></textarea>
+        </label>
+        <label class="draft-field" for="messageWhatsappInfractorDraft">
+          <span class="draft-label">Texto para WhatsApp – Infrator</span>
+          <textarea id="messageWhatsappInfractorDraft" rows="10" placeholder="Mensagem enviada ao infrator. Use {{nome}} e {{bo}} se necessario."></textarea>
+        </label>
+        <label class="draft-field" for="messageWhatsappWitnessDraft">
+          <span class="draft-label">Texto para WhatsApp – Testemunha</span>
+          <textarea id="messageWhatsappWitnessDraft" rows="10" placeholder="Mensagem enviada à testemunha. Use {{nome}} e {{bo}} se necessario."></textarea>
         </label>
       </div>
 

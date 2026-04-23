@@ -7,6 +7,7 @@ const env = require('../config/env');
 const localAuthRepository = require('../repositories/localAuthRepository');
 const localExpectedCaseRepository = require('../repositories/localExpectedCaseRepository');
 const whatsappService = require('./whatsappService');
+const summonsEventsService = require('./summonsEventsService');
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads', 'pdfs');
 const SUPER_ADMIN_FULL_NAME = 'Stephanie de Paula Santos Amorim';
@@ -513,7 +514,8 @@ function buildEmptyPendingSummary() {
     summonsPending: 0,
     notificationsPending: 0,
     pendingRegistrations: 0,
-    activeUsers: 0
+    activeUsers: 0,
+    certificatesGenerated: 0
   };
 }
 
@@ -523,7 +525,8 @@ function normalizePendingSummary(summary) {
     summonsPending: normalizeCount(summary && summary.summonsPending),
     notificationsPending: normalizeCount(summary && summary.notificationsPending),
     pendingRegistrations: normalizeCount(summary && summary.pendingRegistrations),
-    activeUsers: normalizeCount(summary && summary.activeUsers)
+    activeUsers: normalizeCount(summary && summary.activeUsers),
+    certificatesGenerated: normalizeCount(summary && summary.certificatesGenerated)
   };
 }
 
@@ -585,7 +588,7 @@ async function buildDevDashboardOverview() {
     mocked: true,
     casesOfDay: { total: 1, items: [{ protocolNumber: 'DEV-001', title: 'Caso de teste', status: 'open', priority: 'medium', openedAt: new Date().toISOString() }] },
     involvedPeople: { total: involvedPeople.total },
-    pending: { expectedCasesPending, summonsPending: 1, notificationsPending: 1, pendingRegistrations, activeUsers },
+    pending: { expectedCasesPending, summonsPending: 1, notificationsPending: 1, pendingRegistrations, activeUsers, certificatesGenerated: 0 },
     agendaOfDay: { total: 1, items: [{ personName: SUPER_ADMIN_FULL_NAME, appointmentType: 'ATENDIMENTO', personRole: 'VITIMA', startsAt: new Date().toISOString(), endsAt: new Date(Date.now() + 30 * 60000).toISOString(), status: 'AGENDADO' }] },
     recurrence: { total: 1, items: [{ personName: 'Autor Exemplo', cpf: '00000000000', caseCount: 2 }] }
   };
@@ -600,6 +603,7 @@ async function getDashboardOverview() {
     getInvolvedPeopleList(),
     dashboardRepository.getCasesOfDay(),
     dashboardRepository.getPendingSummary(),
+    summonsEventsService.countCertificatesDownloaded(),
     dashboardRepository.getAgendaOfDay(),
     dashboardRepository.getRecurrenceSummary()
   ]);
@@ -613,6 +617,7 @@ async function getDashboardOverview() {
     involvedPeopleResult,
     casesOfDayResult,
     pendingResult,
+    certificatesResult,
     agendaOfDayResult,
     recurrenceResult
   ] = results;
@@ -646,10 +651,19 @@ async function getDashboardOverview() {
     fallbackValue: buildEmptyRecurrenceSummary()
   });
 
+  const certificates = buildOverviewSectionResult(certificatesResult, {
+    sectionName: 'certificatesGenerated',
+    fallbackValue: 0,
+    transform: (value) => normalizeCount(value)
+  });
+
+  pending.value.certificatesGenerated = certificates.value;
+
   const warnings = [
     involvedPeople.warning,
     casesOfDay.warning,
     pending.warning,
+    certificates.warning,
     agendaOfDay.warning,
     recurrence.warning
   ].filter(Boolean);
@@ -777,6 +791,7 @@ async function indictPendingCase(expectedCaseId, payload) {
   const delivery = await whatsappService.sendIndictmentMessage({
     phone: payload && payload.authorWhatsapp,
     messageTemplate: payload && payload.messageTemplate,
+    imageUrl: payload && payload.publicBaseUrl ? `${String(payload.publicBaseUrl).replace(/\/$/, '')}/assets/whatsapp.png` : undefined,
     publicBaseUrl: payload && payload.publicBaseUrl,
     authorName: expectedCase.authorName,
     boNumber: expectedCase.boNumber

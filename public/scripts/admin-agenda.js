@@ -102,7 +102,9 @@ const availabilityState = {
 
 const agendaSettingsState = {
   victimAuthorGapHours: 0,
-  authorSummonsMaxDays: 3
+  authorSummonsMaxDays: 3,
+  summonsMaxAttempts: 3,
+  summonsIntervalHours: 12
 };
 
 function groupAgendaItemsByDate(items) {
@@ -134,6 +136,11 @@ function formatGapRuleLabel(hours) {
 function formatSummonsMaxDaysLabel(days) {
   const value = Number(days) || 0;
   return `${value} ${value === 1 ? 'dia' : 'dias'}`;
+}
+
+function formatHoursLabel(hours) {
+  const value = Number(hours) || 0;
+  return `${value} ${value === 1 ? 'hora' : 'horas'}`;
 }
 
 function renderAgendaList(items) {
@@ -275,8 +282,12 @@ function updateAvailabilitySummary() {
 function renderGapRuleSettings() {
   document.getElementById('gapRuleHoursInput').value = String(agendaSettingsState.victimAuthorGapHours);
   document.getElementById('authorSummonsMaxDaysInput').value = String(agendaSettingsState.authorSummonsMaxDays);
+  document.getElementById('summonsMaxAttemptsInput').value = String(agendaSettingsState.summonsMaxAttempts);
+  document.getElementById('summonsIntervalHoursInput').value = String(agendaSettingsState.summonsIntervalHours);
   document.getElementById('gapRuleSummary').textContent = formatGapRuleLabel(agendaSettingsState.victimAuthorGapHours);
   document.getElementById('authorSummonsMaxDaysSummary').textContent = formatSummonsMaxDaysLabel(agendaSettingsState.authorSummonsMaxDays);
+  document.getElementById('summonsMaxAttemptsSummary').textContent = String(agendaSettingsState.summonsMaxAttempts);
+  document.getElementById('summonsIntervalHoursSummary').textContent = formatHoursLabel(agendaSettingsState.summonsIntervalHours);
 }
 
 function syncAvailabilityDateInput(dateKey) {
@@ -466,8 +477,16 @@ async function loadAgendaSettings() {
 
   agendaSettingsState.victimAuthorGapHours = Number(data && data.victimAuthorGapHours) || 0;
   agendaSettingsState.authorSummonsMaxDays = Number(data && data.authorSummonsMaxDays);
+  agendaSettingsState.summonsMaxAttempts = Number(data && data.summonsMaxAttempts);
+  agendaSettingsState.summonsIntervalHours = Number(data && data.summonsIntervalHours);
   if (!Number.isInteger(agendaSettingsState.authorSummonsMaxDays) || agendaSettingsState.authorSummonsMaxDays < 0) {
     agendaSettingsState.authorSummonsMaxDays = 3;
+  }
+  if (!Number.isInteger(agendaSettingsState.summonsMaxAttempts) || agendaSettingsState.summonsMaxAttempts < 1) {
+    agendaSettingsState.summonsMaxAttempts = 3;
+  }
+  if (!Number.isInteger(agendaSettingsState.summonsIntervalHours) || agendaSettingsState.summonsIntervalHours < 1) {
+    agendaSettingsState.summonsIntervalHours = 12;
   }
   renderGapRuleSettings();
 }
@@ -595,7 +614,9 @@ document.getElementById('gapRuleForm').addEventListener('submit', async (event) 
   const statusElement = document.getElementById('gapRuleStatus');
   const payload = {
     victimAuthorGapHours: Number(document.getElementById('gapRuleHoursInput').value || 0),
-    authorSummonsMaxDays: Number(document.getElementById('authorSummonsMaxDaysInput').value || 0)
+    authorSummonsMaxDays: Number(document.getElementById('authorSummonsMaxDaysInput').value || 0),
+    summonsMaxAttempts: Number(document.getElementById('summonsMaxAttemptsInput').value || 3),
+    summonsIntervalHours: Number(document.getElementById('summonsIntervalHoursInput').value || 12)
   };
 
   submitButton.disabled = true;
@@ -609,11 +630,19 @@ document.getElementById('gapRuleForm').addEventListener('submit', async (event) 
 
     agendaSettingsState.victimAuthorGapHours = Number(result.victimAuthorGapHours) || 0;
     agendaSettingsState.authorSummonsMaxDays = Number(result.authorSummonsMaxDays);
+    agendaSettingsState.summonsMaxAttempts = Number(result.summonsMaxAttempts);
+    agendaSettingsState.summonsIntervalHours = Number(result.summonsIntervalHours);
     if (!Number.isInteger(agendaSettingsState.authorSummonsMaxDays) || agendaSettingsState.authorSummonsMaxDays < 0) {
       agendaSettingsState.authorSummonsMaxDays = 3;
     }
+    if (!Number.isInteger(agendaSettingsState.summonsMaxAttempts) || agendaSettingsState.summonsMaxAttempts < 1) {
+      agendaSettingsState.summonsMaxAttempts = 3;
+    }
+    if (!Number.isInteger(agendaSettingsState.summonsIntervalHours) || agendaSettingsState.summonsIntervalHours < 1) {
+      agendaSettingsState.summonsIntervalHours = 12;
+    }
     renderGapRuleSettings();
-    statusElement.textContent = `Regras atualizadas: ${formatGapRuleLabel(agendaSettingsState.victimAuthorGapHours)} entre vítima e infrator e ${formatSummonsMaxDaysLabel(agendaSettingsState.authorSummonsMaxDays)} como prazo máximo do infrator após a intimação.`;
+    statusElement.textContent = `Regras atualizadas: ${formatGapRuleLabel(agendaSettingsState.victimAuthorGapHours)} entre vítima e infrator, ${formatSummonsMaxDaysLabel(agendaSettingsState.authorSummonsMaxDays)} de prazo do infrator, ${agendaSettingsState.summonsMaxAttempts} tentativa(s) e intervalo de ${formatHoursLabel(agendaSettingsState.summonsIntervalHours)}.`;
   } catch (error) {
     statusElement.textContent = error.message || 'Falha ao salvar regra de agendamento.';
   } finally {

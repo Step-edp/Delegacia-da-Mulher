@@ -10,6 +10,8 @@ function createDefaultStore() {
     settings: {
       victimAuthorGapHours: 0,
       authorSummonsMaxDays: 3,
+      summonsMaxAttempts: 3,
+      summonsIntervalHours: 12,
       updatedAt: null
     }
   };
@@ -43,6 +45,12 @@ function normalizeSettingsRecord(settings) {
     authorSummonsMaxDays: Number.isInteger(Number(settings && settings.authorSummonsMaxDays))
       ? Math.max(0, Number(settings.authorSummonsMaxDays))
       : 3,
+    summonsMaxAttempts: Number.isInteger(Number(settings && settings.summonsMaxAttempts))
+      ? Math.max(1, Number(settings.summonsMaxAttempts))
+      : 3,
+    summonsIntervalHours: Number.isInteger(Number(settings && settings.summonsIntervalHours))
+      ? Math.max(1, Number(settings.summonsIntervalHours))
+      : 12,
     updatedAt: settings && settings.updatedAt ? new Date(settings.updatedAt).toISOString() : null
   };
 }
@@ -178,11 +186,13 @@ async function getSchedulingSettings() {
   return normalizeSettingsRecord(store.settings);
 }
 
-async function updateSchedulingSettings({ victimAuthorGapHours, authorSummonsMaxDays }) {
+async function updateSchedulingSettings({ victimAuthorGapHours, authorSummonsMaxDays, summonsMaxAttempts, summonsIntervalHours }) {
   const store = await readStore();
   store.settings = normalizeSettingsRecord({
     victimAuthorGapHours,
     authorSummonsMaxDays,
+    summonsMaxAttempts,
+    summonsIntervalHours,
     updatedAt: new Date().toISOString()
   });
 

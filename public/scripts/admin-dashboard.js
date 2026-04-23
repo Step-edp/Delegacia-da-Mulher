@@ -64,6 +64,21 @@ function writeDashboardSummaryCache(summary) {
   localStorage.setItem('adminDashboardSummary', JSON.stringify(summary));
 }
 
+function countEnabledNaturesFromStorage() {
+  const NATURE_ITEMS_COUNT = 30;
+  try {
+    const raw = localStorage.getItem('adminNatureEnabledState');
+    const state = raw ? JSON.parse(raw) : {};
+    if (!state || typeof state !== 'object') {
+      return NATURE_ITEMS_COUNT;
+    }
+    const disabledCount = Object.values(state).filter((v) => v === false).length;
+    return NATURE_ITEMS_COUNT - disabledCount;
+  } catch (error) {
+    return NATURE_ITEMS_COUNT;
+  }
+}
+
 function buildSummaryCards(summary) {
   return [
     { label: 'Envolvidos', value: summary.involvedPeopleTotal, action: 'goToInvolvedPage' },
@@ -73,7 +88,8 @@ function buildSummaryCards(summary) {
     { label: 'Agenda', value: summary.agendaTotal, action: 'goToAgendaPage' },
     { label: 'Intimações Pendentes', value: summary.summonsPending },
     { label: 'Mensagens', value: summary.notificationsPending, action: 'goToMessagesPage' },
-    { label: 'Natureza', value: 'Abrir', action: 'goToNaturePage' }
+    { label: 'Natureza', value: countEnabledNaturesFromStorage(), action: 'goToNaturePage' },
+    { label: 'Certificado de não agendamento', value: safeCount(summary.certificatesGenerated), action: 'goToCertificatePage' }
   ];
 }
 
@@ -110,6 +126,10 @@ function runSummaryCardAction(action) {
 
   if (action === 'goToNaturePage') {
     window.location.href = '/admin/natureza';
+  }
+
+  if (action === 'goToCertificatePage') {
+    window.location.href = '/admin/certificado-nao-agendamento';
   }
 }
 
@@ -840,6 +860,7 @@ async function loadDashboard() {
   data.pending.expectedCasesPending = safeCount(data.pending.expectedCasesPending);
   data.pending.summonsPending = safeCount(data.pending.summonsPending);
   data.pending.notificationsPending = safeCount(data.pending.notificationsPending);
+  data.pending.certificatesGenerated = safeCount(data.pending.certificatesGenerated);
 
   if (data && data.mocked) {
     writeDevPendingCases(data.pending.expectedCasesPending);
@@ -853,7 +874,8 @@ async function loadDashboard() {
     pendingRegistrations: data.pending.pendingRegistrations,
     expectedCasesPending: data.pending.expectedCasesPending,
     summonsPending: data.pending.summonsPending,
-    notificationsPending: data.pending.notificationsPending
+    notificationsPending: data.pending.notificationsPending,
+    certificatesGenerated: data.pending.certificatesGenerated
   };
 
   writeDashboardSummaryCache(summarySnapshot);
@@ -919,7 +941,8 @@ if (cachedDashboardSummary) {
     pendingRegistrations: safeCount(cachedDashboardSummary.pendingRegistrations),
     expectedCasesPending: safeCount(cachedDashboardSummary.expectedCasesPending),
     summonsPending: safeCount(cachedDashboardSummary.summonsPending),
-    notificationsPending: safeCount(cachedDashboardSummary.notificationsPending)
+    notificationsPending: safeCount(cachedDashboardSummary.notificationsPending),
+    certificatesGenerated: safeCount(cachedDashboardSummary.certificatesGenerated)
   }));
 }
 

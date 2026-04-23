@@ -78,6 +78,10 @@ function readWhatsappIndictMessage() {
   return String(readMessageDrafts().whatsapp || '').trim();
 }
 
+function readWhatsappImageUrl() {
+  return String(readMessageDrafts().imageUrl || '').trim();
+}
+
 function findPendingItemById(expectedCaseId) {
   return pendingState.allItems.find((item) => Number(item && item.id) === Number(expectedCaseId)) || null;
 }

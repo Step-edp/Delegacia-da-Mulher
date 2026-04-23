@@ -105,6 +105,19 @@ function buildMetaCloudPayload(payload) {
     };
   }
 
+  if (payload.imageUrl) {
+    return {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'image',
+      image: {
+        link: String(payload.imageUrl),
+        caption: String(payload.message || '')
+      }
+    };
+  }
+
   return {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',

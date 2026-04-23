@@ -81,6 +81,10 @@ app.get('/admin/natureza', (req, res) => {
   res.sendFile(path.resolve(process.cwd(), 'public', 'admin-nature.html'));
 });
 
+app.get('/admin/certificado-nao-agendamento', (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), 'public', 'admin-certificate.html'));
+});
+
 app.use(errorHandler);
 
 module.exports = app;

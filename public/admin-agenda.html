@@ -105,6 +105,14 @@
             <span>Prazo máximo após intimação</span>
             <input id="authorSummonsMaxDaysInput" type="number" min="0" max="365" step="1" value="3" required />
           </label>
+          <label class="gap-rule-field" for="summonsMaxAttemptsInput">
+            <span>Máximo de tentativas de intimação</span>
+            <input id="summonsMaxAttemptsInput" type="number" min="1" max="10" step="1" value="3" required />
+          </label>
+          <label class="gap-rule-field" for="summonsIntervalHoursInput">
+            <span>Intervalo entre tentativas (horas)</span>
+            <input id="summonsIntervalHoursInput" type="number" min="1" max="240" step="1" value="12" required />
+          </label>
           <button id="gapRuleSubmitBtn" class="refresh-btn gap-rule-submit-btn" type="submit">Salvar regra</button>
         </form>
 
@@ -116,6 +124,14 @@
           <div>
             <strong>Prazo atual do infrator:</strong>
             <span id="authorSummonsMaxDaysSummary">3 dias</span>
+          </div>
+          <div>
+            <strong>Tentativas de intimação:</strong>
+            <span id="summonsMaxAttemptsSummary">3</span>
+          </div>
+          <div>
+            <strong>Intervalo entre tentativas:</strong>
+            <span id="summonsIntervalHoursSummary">12 horas</span>
           </div>
         </div>
 

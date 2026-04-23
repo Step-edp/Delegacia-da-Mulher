@@ -37,7 +37,9 @@ function showComposePanel() {
 
 function getDraftFields() {
   return {
-    whatsapp: document.getElementById('messageWhatsappDraft')
+    whatsapp: document.getElementById('messageWhatsappDraft'),
+    whatsappInfractor: document.getElementById('messageWhatsappInfractorDraft'),
+    whatsappWitness: document.getElementById('messageWhatsappWitnessDraft')
   };
 }
 
@@ -62,6 +64,15 @@ function setDraftStatus(message, isError = false) {
 
   statusElement.textContent = message;
   statusElement.classList.toggle('draft-status-error', Boolean(isError));
+  if (!isError) {
+    statusElement.classList.add('draft-status-success');
+    clearTimeout(statusElement._successTimer);
+    statusElement._successTimer = setTimeout(() => {
+      statusElement.classList.remove('draft-status-success');
+    }, 3000);
+  } else {
+    statusElement.classList.remove('draft-status-success');
+  }
 }
 
 function populateDraftFields() {
@@ -69,6 +80,8 @@ function populateDraftFields() {
   const fields = getDraftFields();
 
   fields.whatsapp.value = String(drafts.whatsapp || '');
+  fields.whatsappInfractor.value = String(drafts.whatsappInfractor || '');
+  fields.whatsappWitness.value = String(drafts.whatsappWitness || '');
 
   if (drafts.updatedAt) {
     setDraftStatus(`Rascunho recuperado. Ultima atualizacao em ${formatDateTime(drafts.updatedAt)}.`);
@@ -79,6 +92,8 @@ function saveDraftFields() {
   const fields = getDraftFields();
   const drafts = {
     whatsapp: fields.whatsapp.value || '',
+    whatsappInfractor: fields.whatsappInfractor.value || '',
+    whatsappWitness: fields.whatsappWitness.value || '',
     updatedAt: new Date().toISOString()
   };
 
@@ -106,7 +121,15 @@ function setupDraftFields() {
   });
 
   document.getElementById('saveMessageBtn').addEventListener('click', () => {
+    const btn = document.getElementById('saveMessageBtn');
     saveDraftFields();
+    btn.textContent = 'Salvo ✓';
+    btn.disabled = true;
+    clearTimeout(btn._resetTimer);
+    btn._resetTimer = setTimeout(() => {
+      btn.textContent = 'Salvar mensagem';
+      btn.disabled = false;
+    }, 2000);
   });
 }
 

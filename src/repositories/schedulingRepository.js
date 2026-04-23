@@ -3,6 +3,8 @@ const pool = require('../config/database');
 const DEFAULT_SCHEDULING_SETTINGS = Object.freeze({
   victimAuthorGapHours: 0,
   authorSummonsMaxDays: 3,
+  summonsMaxAttempts: 3,
+  summonsIntervalHours: 12,
   updatedAt: null
 });
 
@@ -20,7 +22,10 @@ function isMissingSchedulingSettingsSchemaError(error) {
   }
 
   if (error && error.code === '42703') {
-    return message.includes('author_summons_max_days') || message.includes('victim_author_gap_hours');
+    return message.includes('author_summons_max_days')
+      || message.includes('victim_author_gap_hours')
+      || message.includes('summons_max_attempts')
+      || message.includes('summons_interval_hours');
   }
 
   return false;
@@ -148,6 +153,8 @@ async function getSchedulingSettings() {
       SELECT
         victim_author_gap_hours AS "victimAuthorGapHours",
         author_summons_max_days AS "authorSummonsMaxDays",
+        COALESCE(summons_max_attempts, 3) AS "summonsMaxAttempts",
+        COALESCE(summons_interval_hours, 12) AS "summonsIntervalHours",
         updated_at AS "updatedAt"
       FROM scheduling_settings
       WHERE id = 1
@@ -165,22 +172,26 @@ async function getSchedulingSettings() {
   }
 }
 
-async function updateSchedulingSettings({ victimAuthorGapHours, authorSummonsMaxDays }) {
+async function updateSchedulingSettings({ victimAuthorGapHours, authorSummonsMaxDays, summonsMaxAttempts, summonsIntervalHours }) {
   const query = `
-    INSERT INTO scheduling_settings (id, victim_author_gap_hours, author_summons_max_days)
-    VALUES (1, $1, $2)
+    INSERT INTO scheduling_settings (id, victim_author_gap_hours, author_summons_max_days, summons_max_attempts, summons_interval_hours)
+    VALUES (1, $1, $2, $3, $4)
     ON CONFLICT (id)
     DO UPDATE SET
       victim_author_gap_hours = EXCLUDED.victim_author_gap_hours,
       author_summons_max_days = EXCLUDED.author_summons_max_days,
+      summons_max_attempts = EXCLUDED.summons_max_attempts,
+      summons_interval_hours = EXCLUDED.summons_interval_hours,
       updated_at = NOW()
     RETURNING
       victim_author_gap_hours AS "victimAuthorGapHours",
       author_summons_max_days AS "authorSummonsMaxDays",
+      COALESCE(summons_max_attempts, 3) AS "summonsMaxAttempts",
+      COALESCE(summons_interval_hours, 12) AS "summonsIntervalHours",
       updated_at AS "updatedAt"
   `;
 
-  const { rows } = await pool.query(query, [victimAuthorGapHours, authorSummonsMaxDays]);
+  const { rows } = await pool.query(query, [victimAuthorGapHours, authorSummonsMaxDays, summonsMaxAttempts ?? 3, summonsIntervalHours ?? 12]);
   return rows[0] || null;
 }
 
