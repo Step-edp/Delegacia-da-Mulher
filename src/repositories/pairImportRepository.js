@@ -1,7 +1,15 @@
 const pool = require('../config/database');
 
 function normalizeComparableBoNumber(value) {
-  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let normalized = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  
+  // Remove common prefixes like "BO", "BOLETIM", "RDO", etc.
+  normalized = normalized
+    .replace(/^BO(?=[A-Z0-9])/, '')
+    .replace(/^RDO(?=[A-Z0-9])/, '')
+    .replace(/^BOLETIM(?=[A-Z0-9])/, '');
+  
+  return normalized;
 }
 
 async function findPendingExpectedCaseByBoNumber(boNumber) {
@@ -22,7 +30,16 @@ async function findPendingExpectedCaseByBoNumber(boNumber) {
       author_name AS "authorName",
       created_at AS "createdAt"
     FROM expected_cases
-    WHERE REGEXP_REPLACE(UPPER(COALESCE(bo_number, '')), '[^A-Z0-9]', '', 'g') = $1
+    WHERE REGEXP_REPLACE(
+      REGEXP_REPLACE(
+        UPPER(COALESCE(bo_number, '')),
+        '^BO(?=[A-Z0-9])',
+        ''
+      ),
+      '[^A-Z0-9]',
+      '',
+      'g'
+    ) = $1
       AND status = 'PENDENTE'
     ORDER BY created_at DESC
     LIMIT 1

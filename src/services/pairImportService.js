@@ -30,7 +30,15 @@ function validatePairFiles(files) {
 }
 
 function normalizeComparableBoNumber(value) {
-  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let normalized = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  
+  // Remove common prefixes like "BO", "BOLETIM", "RDO", etc.
+  normalized = normalized
+    .replace(/^BO(?=[A-Z0-9])/, '')
+    .replace(/^RDO(?=[A-Z0-9])/, '')
+    .replace(/^BOLETIM(?=[A-Z0-9])/, '');
+  
+  return normalized;
 }
 
 function resolveTargetBoNumber(boData, extratoData) {
