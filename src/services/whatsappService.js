@@ -33,8 +33,39 @@ function isWhatsappUnavailableError(error) {
     || message.includes('connect econnrefused');
 }
 
+function isPlaceholderConfigValue(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (!normalized) {
+    return true;
+  }
+
+  return normalized.includes('seu-provedor.com')
+    || normalized.includes('troque-por-token')
+    || normalized.includes('troque-por');
+}
+
+function hasUsableWhatsappConfig() {
+  if (env.whatsapp.provider === 'meta-cloud') {
+    const token = String(env.whatsapp.apiToken || '').trim();
+    const phoneNumberId = String(env.whatsapp.phoneNumberId || '').trim();
+    const apiUrl = String(env.whatsapp.apiUrl || '').trim();
+
+    if (apiUrl && !isPlaceholderConfigValue(apiUrl)) {
+      return !isPlaceholderConfigValue(token);
+    }
+
+    return !isPlaceholderConfigValue(token) && !isPlaceholderConfigValue(phoneNumberId);
+  }
+
+  const apiUrl = String(env.whatsapp.apiUrl || '').trim();
+  const apiToken = String(env.whatsapp.apiToken || '').trim();
+
+  return !isPlaceholderConfigValue(apiUrl) && !isPlaceholderConfigValue(apiToken);
+}
+
 function canUseMockWhatsappFallback() {
-  return env.auth.devMode && !env.auth.devSendRealWhatsapp;
+  return env.auth.devMode && (!env.auth.devSendRealWhatsapp || !hasUsableWhatsappConfig());
 }
 
 function resolvePublicBaseUrl(publicBaseUrl) {

@@ -23,7 +23,46 @@ function normalizeMetaCloudPhone(phone) {
   return digits;
 }
 
+function normalizeZApiPhone(phone) {
+  const digits = normalizePhone(phone);
+
+  if (!digits) {
+    return '';
+  }
+
+  if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
+    return digits;
+  }
+
+  if (digits.length === 10 || digits.length === 11) {
+    return `55${digits}`;
+  }
+
+  return digits;
+}
+
+function normalizeZApiBaseUrl(url) {
+  return String(url || '').trim().replace(/\/(send-text|send-image)\/?$/i, '').replace(/\/$/, '');
+}
+
+function resolveZApiUrl(payload) {
+  const baseUrl = normalizeZApiBaseUrl(env.whatsapp.apiUrl);
+
+  if (!baseUrl) {
+    const error = new Error('WHATSAPP_API_URL nao configurado para Z-API.');
+    error.statusCode = 500;
+    throw error;
+  }
+
+  const endpoint = payload && payload.imageUrl ? 'send-image' : 'send-text';
+  return `${baseUrl}/${endpoint}`;
+}
+
 function resolveApiUrl() {
+  if (env.whatsapp.provider === 'z-api') {
+    return normalizeZApiBaseUrl(env.whatsapp.apiUrl);
+  }
+
   if (env.whatsapp.provider === 'meta-cloud') {
     if (env.whatsapp.apiUrl) {
       return env.whatsapp.apiUrl;
@@ -130,6 +169,28 @@ function buildMetaCloudPayload(payload) {
   };
 }
 
+function buildZApiPayload(payload) {
+  const phone = normalizeZApiPhone(payload && payload.to ? payload.to : payload && payload.phone);
+  if (!phone) {
+    const error = new Error('Telefone de destino invalido para envio no WhatsApp.');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  if (payload && payload.imageUrl) {
+    return {
+      phone,
+      image: String(payload.imageUrl),
+      caption: String(payload.message || '')
+    };
+  }
+
+  return {
+    phone,
+    message: String(payload && payload.message ? payload.message : '')
+  };
+}
+
 function extractProviderErrorMessage(error) {
   const responseData = error && error.response ? error.response.data : null;
 
@@ -168,9 +229,13 @@ function buildWhatsappClientError(error) {
 }
 
 async function sendTemplateMessage(payload) {
-  const apiUrl = resolveApiUrl();
+  const apiUrl = env.whatsapp.provider === 'z-api'
+    ? resolveZApiUrl(payload)
+    : resolveApiUrl();
   const body = env.whatsapp.provider === 'meta-cloud'
     ? buildMetaCloudPayload(payload)
+    : env.whatsapp.provider === 'z-api'
+      ? buildZApiPayload(payload)
     : payload;
 
   try {
