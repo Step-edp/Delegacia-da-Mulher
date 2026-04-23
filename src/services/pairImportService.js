@@ -29,14 +29,24 @@ function validatePairFiles(files) {
   };
 }
 
+function normalizeComparableBoNumber(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 function resolveTargetBoNumber(boData, extratoData) {
-  if (boData.boNumber && extratoData.boNumber && boData.boNumber !== extratoData.boNumber) {
+  const boNumberFromBo = String(boData.boNumber || '').trim();
+  const boNumberFromExtrato = String(extratoData.boNumber || '').trim();
+
+  const normalizedBoFromBo = normalizeComparableBoNumber(boNumberFromBo);
+  const normalizedBoFromExtrato = normalizeComparableBoNumber(boNumberFromExtrato);
+
+  if (normalizedBoFromBo && normalizedBoFromExtrato && normalizedBoFromBo !== normalizedBoFromExtrato) {
     const error = new Error('BO e Extrato possuem numeros de BO diferentes.');
     error.statusCode = 409;
     throw error;
   }
 
-  const boNumber = boData.boNumber || extratoData.boNumber;
+  const boNumber = boNumberFromBo || boNumberFromExtrato;
 
   if (!boNumber) {
     const error = new Error('Nao foi possivel identificar o numero do BO para vinculo.');

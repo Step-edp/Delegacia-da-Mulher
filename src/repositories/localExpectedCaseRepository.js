@@ -69,6 +69,10 @@ function normalizeBoNumber(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 }
 
+function normalizeComparableBoNumber(value) {
+  return normalizeBoNumber(value).replace(/[^A-Z0-9]/g, '');
+}
+
 function pickExistingOrIncoming(existingValue, incomingValue) {
   const existing = existingValue == null ? '' : String(existingValue).trim();
   if (existing) {
@@ -399,11 +403,11 @@ async function listImportHistory(limit = 30) {
 }
 
 async function findPendingExpectedCaseByBoNumber(boNumber) {
-  const normalizedBoNumber = normalizeBoNumber(boNumber);
+  const normalizedBoNumber = normalizeComparableBoNumber(boNumber);
   const store = await readStore();
   const expectedCase = store.expectedCases
     .map(normalizeExpectedCaseRecord)
-    .find((item) => item.status === 'PENDENTE' && item.boNumber === normalizedBoNumber);
+    .find((item) => item.status === 'PENDENTE' && normalizeComparableBoNumber(item.boNumber) === normalizedBoNumber);
 
   return expectedCase ? toPendingExpectedCaseItem(expectedCase) : null;
 }
@@ -418,11 +422,11 @@ async function findPendingExpectedCaseById(expectedCaseId) {
 }
 
 async function findVictimAttendanceContextByBoNumber(boNumber) {
-  const normalizedBoNumber = normalizeBoNumber(boNumber);
+  const normalizedBoNumber = normalizeComparableBoNumber(boNumber);
   const store = await readStore();
   const expectedCase = store.expectedCases
     .map(normalizeExpectedCaseRecord)
-    .find((item) => item.boNumber === normalizedBoNumber);
+    .find((item) => normalizeComparableBoNumber(item.boNumber) === normalizedBoNumber);
 
   if (!expectedCase) {
     return null;

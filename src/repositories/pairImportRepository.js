@@ -1,6 +1,16 @@
 const pool = require('../config/database');
 
+function normalizeComparableBoNumber(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 async function findPendingExpectedCaseByBoNumber(boNumber) {
+  const normalizedBoNumber = normalizeComparableBoNumber(boNumber);
+
+  if (!normalizedBoNumber) {
+    return null;
+  }
+
   const query = `
     SELECT
       id,
@@ -12,13 +22,13 @@ async function findPendingExpectedCaseByBoNumber(boNumber) {
       author_name AS "authorName",
       created_at AS "createdAt"
     FROM expected_cases
-    WHERE bo_number = $1
+    WHERE REGEXP_REPLACE(UPPER(COALESCE(bo_number, '')), '[^A-Z0-9]', '', 'g') = $1
       AND status = 'PENDENTE'
     ORDER BY created_at DESC
     LIMIT 1
   `;
 
-  const { rows } = await pool.query(query, [boNumber]);
+  const { rows } = await pool.query(query, [normalizedBoNumber]);
   return rows[0] || null;
 }
 
