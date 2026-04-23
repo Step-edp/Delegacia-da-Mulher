@@ -91,6 +91,14 @@ function buildHeaders() {
     'Content-Type': 'application/json'
   };
 
+  if (env.whatsapp.provider === 'z-api') {
+    if (env.whatsapp.clientToken) {
+      headers['Client-Token'] = String(env.whatsapp.clientToken);
+    }
+
+    return headers;
+  }
+
   if (env.whatsapp.apiToken) {
     if (env.whatsapp.provider === 'meta-cloud') {
       headers.Authorization = `Bearer ${env.whatsapp.apiToken}`;

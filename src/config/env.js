@@ -45,6 +45,7 @@ const env = {
     provider: process.env.WHATSAPP_PROVIDER || 'generic',
     apiUrl: process.env.WHATSAPP_API_URL || '',
     apiToken: process.env.WHATSAPP_API_TOKEN || '',
+    clientToken: process.env.WHATSAPP_CLIENT_TOKEN || '',
     apiVersion: process.env.WHATSAPP_API_VERSION || 'v22.0',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
     languageCode: process.env.WHATSAPP_LANGUAGE_CODE || 'pt_BR',
