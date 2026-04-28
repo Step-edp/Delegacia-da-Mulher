@@ -49,6 +49,47 @@ async function findPendingExpectedCaseByBoNumber(boNumber) {
   return rows[0] || null;
 }
 
+async function findAvailableExpectedCaseByBoNumber(boNumber) {
+  const normalizedBoNumber = normalizeComparableBoNumber(boNumber);
+
+  if (!normalizedBoNumber) {
+    return null;
+  }
+
+  const query = `
+    SELECT
+      ec.id,
+      ec.daily_import_id AS "dailyImportId",
+      ec.status,
+      ec.bo_number AS "boNumber",
+      ec.natureza,
+      ec.victim_name AS "victimName",
+      ec.author_name AS "authorName",
+      ec.created_at AS "createdAt"
+    FROM expected_cases ec
+    LEFT JOIN case_pdf_pairs cpp ON cpp.expected_case_id = ec.id
+    WHERE REGEXP_REPLACE(
+      REGEXP_REPLACE(
+        UPPER(COALESCE(ec.bo_number, '')),
+        '^BO(?=[A-Z0-9])',
+        ''
+      ),
+      '[^A-Z0-9]',
+      '',
+      'g'
+    ) = $1
+      AND (
+        ec.status = 'PENDENTE'
+        OR (ec.status = 'PROCESSANDO' AND cpp.id IS NULL)
+      )
+    ORDER BY ec.created_at DESC
+    LIMIT 1
+  `;
+
+  const { rows } = await pool.query(query, [normalizedBoNumber]);
+  return rows[0] || null;
+}
+
 async function linkPairToExpectedCase({ expectedCaseId, boFile, extratoFile, boData, extratoData }) {
   const client = await pool.connect();
 
@@ -59,7 +100,17 @@ async function linkPairToExpectedCase({ expectedCaseId, boFile, extratoFile, boD
       UPDATE expected_cases
       SET status = 'PROCESSANDO'
       WHERE id = $1
-        AND status = 'PENDENTE'
+        AND (
+          status = 'PENDENTE'
+          OR (
+            status = 'PROCESSANDO'
+            AND NOT EXISTS (
+              SELECT 1
+              FROM case_pdf_pairs
+              WHERE expected_case_id = expected_cases.id
+            )
+          )
+        )
       RETURNING
         id,
         status,
@@ -134,5 +185,6 @@ async function linkPairToExpectedCase({ expectedCaseId, boFile, extratoFile, boD
 
 module.exports = {
   findPendingExpectedCaseByBoNumber,
+  findAvailableExpectedCaseByBoNumber,
   linkPairToExpectedCase
 };

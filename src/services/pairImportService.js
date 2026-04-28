@@ -178,10 +178,10 @@ async function importBoAndExtratoPair(files, payload) {
 
   if (env.auth.devMode) {
     const syncedPeople = buildLocalSyncedPeople(boData, manualPhones);
-    const expectedCase = await localExpectedCaseRepository.findPendingExpectedCaseByBoNumber(boNumber);
+    const expectedCase = await localExpectedCaseRepository.findAvailableExpectedCaseByBoNumber(boNumber);
 
     if (!expectedCase) {
-      const error = new Error(`Nenhum expected_case PENDENTE encontrado para o BO ${boNumber}.`);
+      const error = new Error(`Nenhum expected_case disponivel para vinculo encontrado para o BO ${boNumber}.`);
       error.statusCode = 404;
       throw error;
     }
@@ -207,10 +207,10 @@ async function importBoAndExtratoPair(files, payload) {
   }
 
   const syncedPeople = await upsertPeopleFromBoData(boData, manualPhones);
-  const expectedCase = await pairImportRepository.findPendingExpectedCaseByBoNumber(boNumber);
+  const expectedCase = await pairImportRepository.findAvailableExpectedCaseByBoNumber(boNumber);
 
   if (!expectedCase) {
-    const error = new Error(`Nenhum expected_case PENDENTE encontrado para o BO ${boNumber}.`);
+    const error = new Error(`Nenhum expected_case disponivel para vinculo encontrado para o BO ${boNumber}.`);
     error.statusCode = 404;
     throw error;
   }

@@ -449,6 +449,30 @@ async function findPendingExpectedCaseByBoNumber(boNumber) {
   return expectedCase ? toPendingExpectedCaseItem(expectedCase) : null;
 }
 
+async function findAvailableExpectedCaseByBoNumber(boNumber) {
+  const normalizedBoNumber = normalizeComparableBoNumber(boNumber);
+  const store = await readStore();
+  const expectedCase = store.expectedCases
+    .map(normalizeExpectedCaseRecord)
+    .find((item) => {
+      if (normalizeComparableBoNumber(item.boNumber) !== normalizedBoNumber) {
+        return false;
+      }
+
+      if (item.status === 'PENDENTE') {
+        return true;
+      }
+
+      if (item.status === 'PROCESSANDO' && !item.pairLink) {
+        return true;
+      }
+
+      return false;
+    });
+
+  return expectedCase ? toPendingExpectedCaseItem(expectedCase) : null;
+}
+
 async function findPendingExpectedCaseById(expectedCaseId) {
   const store = await readStore();
   const expectedCase = store.expectedCases
@@ -509,8 +533,11 @@ async function linkPairToExpectedCase({ expectedCaseId, boFile, extratoFile, boD
   const store = await readStore();
   const expectedCase = store.expectedCases.find((item) => Number(item.id) === Number(expectedCaseId));
 
-  if (!expectedCase || String(expectedCase.status || '').toUpperCase() !== 'PENDENTE') {
-    const error = new Error('Caso esperado nao esta mais com status PENDENTE.');
+  const status = String(expectedCase && expectedCase.status || '').toUpperCase();
+  const canLinkPair = status === 'PENDENTE' || (status === 'PROCESSANDO' && !expectedCase.pairLink);
+
+  if (!expectedCase || !canLinkPair) {
+    const error = new Error('Caso esperado nao esta disponivel para vinculo de BO + Extrato.');
     error.statusCode = 409;
     throw error;
   }
@@ -564,6 +591,7 @@ module.exports = {
   listImportHistory,
   listInvolvedPeopleSource,
   findPendingExpectedCaseByBoNumber,
+  findAvailableExpectedCaseByBoNumber,
   findPendingExpectedCaseById,
   findVictimAttendanceContextByBoNumber,
   markPendingCaseAsProcessing,
