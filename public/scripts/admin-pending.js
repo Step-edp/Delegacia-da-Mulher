@@ -333,6 +333,20 @@ function renderPendingItems(items, total, query = '') {
         ? `<a class="download-original-link" href="/api/admin/dashboard/download-file/${encodeURIComponent(savedName)}" target="_blank" download="${escapeHtml(sourceName || savedName)}">⬇ ${escapeHtml(downloadLabel)}</a>`
         : '';
 
+      const pairBoSaved = valueOrEmpty(item && item.pairBoSavedName);
+      const pairBoName = valueOrEmpty(item && item.pairBoFileName) || pairBoSaved;
+      const pairExtratoSaved = valueOrEmpty(item && item.pairExtratoSavedName);
+      const pairExtratoName = valueOrEmpty(item && item.pairExtratoFileName) || pairExtratoSaved;
+      const pairBoLinkHtml = pairBoSaved
+        ? `<a class="download-original-link" href="/api/admin/dashboard/download-file/${encodeURIComponent(pairBoSaved)}" target="_blank" download="${escapeHtml(pairBoName)}">⬇ ${escapeHtml(pairBoName || 'BO importado')}</a>`
+        : '';
+      const pairExtratoLinkHtml = pairExtratoSaved
+        ? `<a class="download-original-link" href="/api/admin/dashboard/download-file/${encodeURIComponent(pairExtratoSaved)}" target="_blank" download="${escapeHtml(pairExtratoName)}">⬇ ${escapeHtml(pairExtratoName || 'Extrato importado')}</a>`
+        : '';
+      const pairLinksHtml = pairBoLinkHtml || pairExtratoLinkHtml
+        ? `${pairBoLinkHtml}${pairExtratoLinkHtml}`
+        : '';
+
       return `
         <article class="item bo-card">
           <div class="item-main">
@@ -357,7 +371,8 @@ function renderPendingItems(items, total, query = '') {
               <span class="detail-value">${escapeHtml(local)}</span>
             </div>
           </div>
-          ${downloadHtml ? `<div class="bo-card-download">${downloadHtml}</div>` : ''}
+          ${downloadHtml ? `<div class="bo-card-download"><span class="bo-card-download-label">Livro BO:</span>${downloadHtml}</div>` : ''}
+          ${pairLinksHtml ? `<div class="bo-card-download"><span class="bo-card-download-label">Documentos importados:</span>${pairLinksHtml}</div>` : ''}
 
           <form class="upload-pair-form" data-bo-number="${escapedBoNumber}" data-expected-case-id="${escapedExpectedCaseId}">
             <div class="upload-pair-header">

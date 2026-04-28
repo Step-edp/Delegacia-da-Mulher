@@ -122,6 +122,10 @@ function normalizeExpectedCaseRecord(expectedCase) {
 }
 
 function toPendingExpectedCaseItem(expectedCase) {
+  const pairLink = expectedCase.pairLink || null;
+  const boFileSaved = pairLink && pairLink.boFilePath ? path.basename(pairLink.boFilePath) : null;
+  const extratoFileSaved = pairLink && pairLink.extratoFilePath ? path.basename(pairLink.extratoFilePath) : null;
+
   return {
     id: expectedCase.id,
     boNumber: expectedCase.boNumber,
@@ -136,6 +140,10 @@ function toPendingExpectedCaseItem(expectedCase) {
     extractionOrder: expectedCase.extractionOrder,
     sourceName: expectedCase.sourceName,
     savedName: expectedCase.savedName,
+    pairBoFileName: pairLink ? (pairLink.boFileName || null) : null,
+    pairBoSavedName: boFileSaved,
+    pairExtratoFileName: pairLink ? (pairLink.extratoFileName || null) : null,
+    pairExtratoSavedName: extratoFileSaved,
     createdAt: expectedCase.createdAt
   };
 }
