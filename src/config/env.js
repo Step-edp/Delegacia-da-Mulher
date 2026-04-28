@@ -39,7 +39,11 @@ const env = {
     devMode: process.env.AUTH_DEV_MODE === 'true',
     devSendRealOtp: process.env.AUTH_DEV_SEND_REAL_OTP === 'true',
     devSendRealWhatsapp: process.env.AUTH_DEV_SEND_REAL_WHATSAPP === 'true',
-    devAdminCpf: process.env.AUTH_DEV_ADMIN_CPF || '40280221851'
+    devAdminCpf: process.env.AUTH_DEV_ADMIN_CPF || '40280221851',
+    devAdminCpfs: String(process.env.AUTH_DEV_ADMIN_CPFS || '')
+      .split(',')
+      .map((value) => String(value || '').replace(/\D/g, ''))
+      .filter(Boolean)
   },
   whatsapp: {
     provider: process.env.WHATSAPP_PROVIDER || 'generic',

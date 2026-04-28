@@ -2,21 +2,41 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const STORE_PATH = path.resolve(process.cwd(), 'database', 'dev-data', 'local-auth.json');
-const SUPER_ADMIN_CPF = '40280221851';
-const SUPER_ADMIN_EMAIL = 'stephanieps.amorim@gmail.com';
-const SUPER_ADMIN_FULL_NAME = 'Stephanie de Paula Santos Amorim';
-const LEGACY_SUPER_ADMIN_NAME = 'super admin';
+const PROTECTED_ADMIN_USERS = [
+  {
+    cpf: '40280221851',
+    email: 'stephanieps.amorim@gmail.com',
+    fullName: 'Stephanie de Paula Santos Amorim',
+    phone: '12996839184',
+    legacyNames: ['super admin']
+  },
+  {
+    cpf: '00000000000',
+    email: 'joao@gmail.com',
+    fullName: 'Joao',
+    phone: '24974012990',
+    legacyNames: []
+  }
+];
 
-function createDefaultAdminUser() {
+function normalizeCpf(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function createDefaultAdminUser(admin, id) {
   const now = new Date().toISOString();
 
   return {
-    id: 1,
-    personId: 1,
-    fullName: SUPER_ADMIN_FULL_NAME,
-    email: SUPER_ADMIN_EMAIL,
-    phone: '12996839184',
-    cpf: SUPER_ADMIN_CPF,
+    id,
+    personId: id,
+    fullName: admin.fullName,
+    email: admin.email,
+    phone: admin.phone,
+    cpf: admin.cpf,
     role: 'admin',
     isActive: true,
     createdAt: now,
@@ -25,9 +45,11 @@ function createDefaultAdminUser() {
 }
 
 function createDefaultStore() {
+  const users = PROTECTED_ADMIN_USERS.map((admin, index) => createDefaultAdminUser(admin, index + 1));
+
   return {
-    lastUserId: 1,
-    users: [createDefaultAdminUser()]
+    lastUserId: users.length,
+    users
   };
 }
 
@@ -54,22 +76,23 @@ async function readStore() {
   }
 
   const parsed = JSON.parse(raw);
-  const users = Array.isArray(parsed.users)
+  const syncedStore = syncProtectedAdminUsers(parsed.users);
+  const nextStore = {
+    lastUserId: Math.max(Number(parsed.lastUserId) || 0, syncedStore.lastUserId),
+    users: syncedStore.users
+  };
+
+  const normalizedOriginalUsers = Array.isArray(parsed.users)
     ? parsed.users.map((item) => normalizeUserRecord(item))
     : [];
-  const migratedUsers = users.map((item) => migrateProtectedAdminUser(item));
+  const didUsersChange = JSON.stringify(normalizedOriginalUsers) !== JSON.stringify(nextStore.users);
+  const didLastUserIdChange = Number(parsed.lastUserId) !== nextStore.lastUserId;
 
-  if (JSON.stringify(users) !== JSON.stringify(migratedUsers)) {
-    await writeStore({
-      lastUserId: Number(parsed.lastUserId) || 0,
-      users: migratedUsers
-    });
+  if (didUsersChange || didLastUserIdChange) {
+    await writeStore(nextStore);
   }
 
-  return {
-    lastUserId: Number(parsed.lastUserId) || 0,
-    users: migratedUsers
-  };
+  return nextStore;
 }
 
 async function writeStore(store) {
@@ -92,19 +115,70 @@ function normalizeUserRecord(user) {
   };
 }
 
+function isProtectedAdminConfig(user, protectedAdmin) {
+  const cpf = normalizeCpf(user && user.cpf);
+  const email = normalizeEmail(user && user.email);
+
+  return cpf === protectedAdmin.cpf
+    || email === protectedAdmin.email;
+}
+
 function migrateProtectedAdminUser(user) {
-  if (!isSuperAdminUser(user)) {
-    return user;
+  const normalized = normalizeUserRecord(user);
+  const protectedAdmin = PROTECTED_ADMIN_USERS.find((item) => isProtectedAdminConfig(normalized, item));
+
+  if (!protectedAdmin) {
+    return normalized;
   }
 
-  const fullName = String(user.fullName || '').trim();
-  if (fullName && fullName.toLowerCase() !== LEGACY_SUPER_ADMIN_NAME) {
-    return user;
+  const fullName = String(normalized.fullName || '').trim().toLowerCase();
+  const shouldReplaceLegacyName = (protectedAdmin.legacyNames || [])
+    .map((item) => String(item || '').trim().toLowerCase())
+    .includes(fullName);
+
+  return {
+    ...normalized,
+    fullName: normalized.fullName && !shouldReplaceLegacyName ? normalized.fullName : protectedAdmin.fullName,
+    email: protectedAdmin.email,
+    phone: protectedAdmin.phone,
+    cpf: protectedAdmin.cpf,
+    role: 'admin',
+    isActive: true
+  };
+}
+
+function syncProtectedAdminUsers(users) {
+  const normalizedUsers = Array.isArray(users)
+    ? users.map((item) => normalizeUserRecord(item))
+    : [];
+  const nextUsers = normalizedUsers.map((item) => migrateProtectedAdminUser(item));
+  let maxId = nextUsers.reduce((acc, item) => Math.max(acc, Number(item.id) || 0), 0);
+
+  for (const admin of PROTECTED_ADMIN_USERS) {
+    const index = nextUsers.findIndex((item) => isProtectedAdminConfig(item, admin));
+
+    if (index >= 0) {
+      const current = nextUsers[index];
+      nextUsers[index] = {
+        ...current,
+        fullName: admin.fullName,
+        email: admin.email,
+        phone: admin.phone,
+        cpf: admin.cpf,
+        role: 'admin',
+        isActive: true,
+        updatedAt: current.updatedAt || current.createdAt || new Date().toISOString()
+      };
+      continue;
+    }
+
+    maxId += 1;
+    nextUsers.push(createDefaultAdminUser(admin, maxId));
   }
 
   return {
-    ...user,
-    fullName: SUPER_ADMIN_FULL_NAME
+    users: nextUsers,
+    lastUserId: maxId
   };
 }
 
@@ -135,11 +209,7 @@ function toActiveUserItem(user) {
 }
 
 function isSuperAdminUser(user) {
-  const cpf = String(user && user.cpf ? user.cpf : '').replace(/\D/g, '');
-  const email = String(user && user.email ? user.email : '').trim().toLowerCase();
-
-  return cpf === SUPER_ADMIN_CPF
-    || email === SUPER_ADMIN_EMAIL;
+  return PROTECTED_ADMIN_USERS.some((item) => isProtectedAdminConfig(user, item));
 }
 
 function sortActiveUsers(left, right) {

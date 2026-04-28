@@ -22,6 +22,17 @@ function normalizeRegistrationRole(role) {
   return String(role || '').trim().toLowerCase();
 }
 
+function isAllowedDevAdminCpf(cpf) {
+  const normalizedCpf = normalizeCpf(cpf);
+  const allowedCpfs = new Set([
+    normalizeCpf(env.auth.devAdminCpf),
+    ...((Array.isArray(env.auth.devAdminCpfs) ? env.auth.devAdminCpfs : []).map((value) => normalizeCpf(value))),
+    '00000000000'
+  ].filter(Boolean));
+
+  return allowedCpfs.has(normalizedCpf);
+}
+
 function generateOtpCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
@@ -153,7 +164,7 @@ async function requestAdminOtp(payload) {
   }
 
   if (env.auth.devMode && !env.auth.devSendRealOtp) {
-    if (cpf !== normalizeCpf(env.auth.devAdminCpf)) {
+    if (!isAllowedDevAdminCpf(cpf)) {
       const error = new Error('CPF sem permissao de admin no modo de desenvolvimento.');
       error.statusCode = 403;
       throw error;
@@ -400,7 +411,7 @@ async function verifyAdminOtp(payload) {
   if (env.auth.devMode && !env.auth.devSendRealOtp) {
     ensureSessionSecret();
 
-    if (cpf !== normalizeCpf(env.auth.devAdminCpf)) {
+    if (!isAllowedDevAdminCpf(cpf)) {
       const error = new Error('CPF sem permissao de admin no modo de desenvolvimento.');
       error.statusCode = 403;
       throw error;

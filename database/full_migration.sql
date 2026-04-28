@@ -1,5 +1,5 @@
 -- Migração completa - Delegacia da Mulher
--- Gerado em: 2026-04-23T14:13:46.153Z
+-- Gerado em: 2026-04-28T13:32:56.607Z
 -- Execute este arquivo no seu banco PostgreSQL
 
 \c railway;
@@ -712,6 +712,77 @@ WHERE ec.id = ranked_expected_cases.id
 
 COMMIT;
 
+-- ===========================================
+-- Migração: 017_summons_attempts_and_events.sql
+-- ===========================================
+
+BEGIN;
+
+-- Configurações de tentativas de intimação (singleton)
+ALTER TABLE scheduling_settings
+  ADD COLUMN IF NOT EXISTS summons_max_attempts INTEGER NOT NULL DEFAULT 3,
+  ADD COLUMN IF NOT EXISTS summons_interval_hours INTEGER NOT NULL DEFAULT 12;
+
+ALTER TABLE scheduling_settings
+  DROP CONSTRAINT IF EXISTS scheduling_settings_summons_attempts_chk;
+ALTER TABLE scheduling_settings
+  ADD CONSTRAINT scheduling_settings_summons_attempts_chk
+    CHECK (summons_max_attempts >= 1 AND summons_max_attempts <= 10);
+
+ALTER TABLE scheduling_settings
+  DROP CONSTRAINT IF EXISTS scheduling_settings_summons_interval_chk;
+ALTER TABLE scheduling_settings
+  ADD CONSTRAINT scheduling_settings_summons_interval_chk
+    CHECK (summons_interval_hours >= 1);
+
+-- Número da tentativa em cada intimação
+ALTER TABLE summons
+  ADD COLUMN IF NOT EXISTS attempt_number INTEGER NOT NULL DEFAULT 1;
+
+-- Histórico de eventos de intimação
+CREATE TABLE IF NOT EXISTS summons_events (
+  id BIGSERIAL PRIMARY KEY,
+  summons_id BIGINT NOT NULL,
+  event_type VARCHAR(50) NOT NULL,
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  user_id BIGINT,
+  metadata JSONB,
+  CONSTRAINT summons_events_summons_fk
+    FOREIGN KEY (summons_id)
+    REFERENCES summons(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT summons_events_user_fk
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE,
+  CONSTRAINT summons_events_type_chk
+    CHECK (event_type IN (
+      'link_clicked',
+      'schedule_button_clicked',
+      'scheduled',
+      'refusal_clicked',
+      'no_action_timeout',
+      'attempt_sent',
+      'certificate_downloaded'
+    ))
+);
+
+CREATE INDEX IF NOT EXISTS idx_summons_events_summons_id
+  ON summons_events (summons_id);
+
+CREATE INDEX IF NOT EXISTS idx_summons_events_type
+  ON summons_events (event_type);
+
+CREATE INDEX IF NOT EXISTS idx_summons_events_occurred_at
+  ON summons_events (occurred_at);
+
+COMMIT;
+
+
 
 -- ===========================================
 -- SEEDS DATA
@@ -733,6 +804,34 @@ WITH upsert_person AS (
 )
 INSERT INTO users (person_id, full_name, email, password_hash, role, is_active)
 SELECT id, 'Stephanie de Paula Santos Amorim', 'stephanieps.amorim@gmail.com', 'OTP_ONLY_LOGIN', 'admin', TRUE
+FROM upsert_person
+ON CONFLICT (email)
+DO UPDATE SET
+  person_id = EXCLUDED.person_id,
+  full_name = EXCLUDED.full_name,
+  role = 'admin',
+  is_active = TRUE,
+  updated_at = NOW();
+
+COMMIT;
+
+
+-- Seed: 002_admin_joao.sql
+
+BEGIN;
+
+WITH upsert_person AS (
+  INSERT INTO persons (full_name, cpf, phone)
+  VALUES ('Joao', '00000000000', '24974012990')
+  ON CONFLICT (cpf)
+  DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    phone = EXCLUDED.phone,
+    updated_at = NOW()
+  RETURNING id
+)
+INSERT INTO users (person_id, full_name, email, password_hash, role, is_active)
+SELECT id, 'Joao', 'joao@gmail.com', 'OTP_ONLY_LOGIN', 'admin', TRUE
 FROM upsert_person
 ON CONFLICT (email)
 DO UPDATE SET

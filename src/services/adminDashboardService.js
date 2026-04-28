@@ -11,7 +11,8 @@ const summonsEventsService = require('./summonsEventsService');
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads', 'pdfs');
 const SUPER_ADMIN_FULL_NAME = 'Stephanie de Paula Santos Amorim';
-const SUPER_ADMIN_EMAIL = 'stephanieps.amorim@gmail.com';
+const PROTECTED_ADMIN_EMAILS = ['stephanieps.amorim@gmail.com', 'joao@gmail.com'];
+const PROTECTED_ADMIN_CPFS = ['00000000000'];
 
 function toIsoOrNull(value) {
   if (!value) {
@@ -287,9 +288,14 @@ function isProtectedUser(user) {
     return false;
   }
 
-  const protectedCpf = normalizeDigits(env.auth.devAdminCpf || '40280221851');
-  return normalizeDigits(user.cpf) === protectedCpf
-    || normalizeLower(user.email) === SUPER_ADMIN_EMAIL;
+  const protectedCpfs = new Set([
+    normalizeDigits(env.auth.devAdminCpf || '40280221851'),
+    ...PROTECTED_ADMIN_CPFS.map((value) => normalizeDigits(value))
+  ].filter(Boolean));
+  const protectedEmails = new Set(PROTECTED_ADMIN_EMAILS.map((value) => normalizeLower(value)).filter(Boolean));
+
+  return protectedCpfs.has(normalizeDigits(user.cpf))
+    || protectedEmails.has(normalizeLower(user.email));
 }
 
 function annotateUserItem(user) {
