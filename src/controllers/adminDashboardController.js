@@ -28,6 +28,35 @@ async function getProcessingCases(req, res, next) {
   }
 }
 
+async function downloadImportedFile(req, res, next) {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads', 'pdfs');
+
+    const rawFileName = String(req.params.fileName || '').trim();
+    const safeFileName = path.basename(rawFileName);
+
+    if (!safeFileName || safeFileName !== rawFileName || safeFileName.includes('..')) {
+      const error = new Error('Nome de arquivo invalido.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const filePath = path.join(UPLOADS_DIR, safeFileName);
+
+    if (!fs.existsSync(filePath)) {
+      const error = new Error('Arquivo nao encontrado.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.download(filePath, safeFileName);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function indictPendingCase(req, res, next) {
   try {
     const expectedCaseId = Number(req.params.expectedCaseId);
@@ -198,6 +227,7 @@ module.exports = {
   getOverview,
   getPendingCases,
   getProcessingCases,
+  downloadImportedFile,
   indictPendingCase,
   getAgendaCalendar,
   getAgendaAvailability,

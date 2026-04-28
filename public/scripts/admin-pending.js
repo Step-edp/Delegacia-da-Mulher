@@ -326,6 +326,12 @@ function renderPendingItems(items, total, query = '') {
       const flagranteLabel = flagrante === '-' ? 'Sem flagrante informado' : `Flagrante ${flagrante}`;
       const escapedBoNumber = escapeHtml(boNumber);
       const escapedExpectedCaseId = canIndict ? String(expectedCaseId) : '';
+      const savedName = valueOrEmpty(item && item.savedName);
+      const sourceName = valueOrEmpty(item && item.sourceName);
+      const downloadLabel = sourceName || savedName || 'Arquivo original';
+      const downloadHtml = savedName
+        ? `<a class="download-original-link" href="/api/admin/dashboard/download-file/${encodeURIComponent(savedName)}" target="_blank" download="${escapeHtml(sourceName || savedName)}">⬇ ${escapeHtml(downloadLabel)}</a>`
+        : '';
 
       return `
         <article class="item bo-card">
@@ -351,6 +357,7 @@ function renderPendingItems(items, total, query = '') {
               <span class="detail-value">${escapeHtml(local)}</span>
             </div>
           </div>
+          ${downloadHtml ? `<div class="bo-card-download">${downloadHtml}</div>` : ''}
 
           <form class="upload-pair-form" data-bo-number="${escapedBoNumber}" data-expected-case-id="${escapedExpectedCaseId}">
             <div class="upload-pair-header">

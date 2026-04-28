@@ -307,6 +307,31 @@ h1 {
   box-shadow: 0 6px 18px rgba(34, 50, 67, 0.05);
 }
 
+.bo-card-download {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--gray-100, #f0f0f0);
+}
+
+.download-original-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--pink-700);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid var(--pink-200, #f0c0d0);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.download-original-link:hover {
+  background: var(--pink-50, #fff0f4);
+  text-decoration: none;
+}
+
 .item-main {
   display: flex;
   justify-content: space-between;

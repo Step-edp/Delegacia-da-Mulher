@@ -134,6 +134,8 @@ function toPendingExpectedCaseItem(expectedCase) {
     local: expectedCase.local,
     status: expectedCase.status,
     extractionOrder: expectedCase.extractionOrder,
+    sourceName: expectedCase.sourceName,
+    savedName: expectedCase.savedName,
     createdAt: expectedCase.createdAt
   };
 }
