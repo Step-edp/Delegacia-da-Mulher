@@ -767,7 +767,21 @@ async function getProcessingCasesList() {
   }
 
   try {
-    return await dashboardRepository.getProcessingExpectedCases?.();
+    if (typeof dashboardRepository.getProcessingExpectedCases !== 'function') {
+      return {
+        total: 0,
+        items: []
+      };
+    }
+
+    const result = await dashboardRepository.getProcessingExpectedCases();
+    const items = Array.isArray(result && result.items) ? result.items : [];
+    const total = Number.isFinite(Number(result && result.total)) ? Number(result.total) : items.length;
+
+    return {
+      total,
+      items
+    };
   } catch (error) {
     if (!env.auth.devMode) {
       throw error;

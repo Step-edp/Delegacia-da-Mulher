@@ -498,7 +498,7 @@ async function loadPendingCases() {
     pendingItems = Array.isArray(pendingData && pendingData.items) ? pendingData.items : [];
 
     if (processingResponse.ok) {
-      const processingData = await processingResponse.json();
+      const processingData = await processingResponse.json().catch(() => ({}));
       processingItems = Array.isArray(processingData && processingData.items) ? processingData.items : [];
     }
 
