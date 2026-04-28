@@ -374,14 +374,7 @@ async function sendIndictmentMessage(payload) {
     phone,
     message,
     imageUrl: payload && payload.imageUrl,
-    context: 'indiciamento',
-    templateName: resolveTemplateName('AUTOR'),
-    variables: {
-      nome: String(payload && payload.authorName || '').trim(),
-      tipo: 'AUTOR',
-      texto: message,
-      link
-    }
+    context: 'indiciamento'
   });
 
   return {
